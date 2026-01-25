@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+!GLExp_Boilerplate/
+!GLExp_Boilerplate/Source/
+!GLExp_Boilerplate/Source/Libs/
+!GLExp_Boilerplate/Source/Libs/**

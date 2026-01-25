@@ -1,5 +1,6 @@
-// header.h : include file for standard system include files,
-// or project specific include files
+//
+// OpenGL framework and demo boilerplate
+// (c) 2026 by Sergei Kuratiov. MIT License
 //
 
 #pragma once

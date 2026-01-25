@@ -1,10 +1,15 @@
+//
+// OpenGL framework and demo boilerplate
+// (c) 2026 by Sergei Kuratiov. MIT License
+//
+
 #include "Demo.h"
+#include "Renderer.h"
 
 //
 //  Globals
 //
 Demo* Demo::m_pInstance = nullptr;
-
 
 //
 // Constructor / destructor
@@ -28,6 +33,9 @@ BOOL Demo::Init(LPWSTR lpCmdLine) {
 // Run
 //
 void Demo::Run(double frameTime, float fps) {
+	Renderer* pRenderer = Renderer::getInstance();
+
+	pRenderer->drawFrame(frameTime);
 }
 
 

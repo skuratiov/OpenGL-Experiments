@@ -130,11 +130,13 @@
     <ClInclude Include="Source\Application.h" />
     <ClInclude Include="Source\Demo.h" />
     <ClInclude Include="Source\framework.h" />
+    <ClInclude Include="Source\Renderer.h" />
     <ClInclude Include="Source\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Demo.cpp" />
+    <ClCompile Include="Source\Renderer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

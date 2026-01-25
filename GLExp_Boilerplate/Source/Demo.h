@@ -1,3 +1,8 @@
+//
+// OpenGL framework and demo boilerplate
+// (c) 2026 by Sergei Kuratiov. MIT License
+//
+
 #pragma once
 #include "Application.h"
 
@@ -14,8 +19,8 @@ public:
 	Demo(const Demo&) = delete;
 	virtual ~Demo();
 
-	BOOL Init(LPWSTR lpCmdLine);
-	void Run(double frameTime, float fps);
+	BOOL Init(LPWSTR );
+	void Run(double , float );
 	void Done();
 		
 protected:

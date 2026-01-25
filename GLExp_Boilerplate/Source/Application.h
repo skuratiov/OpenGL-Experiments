@@ -1,19 +1,27 @@
+//
+// OpenGL framework and demo boilerplate
+// (c) 2026 by Sergei Kuratiov. MIT License
+//
+
 #pragma once
 #include "framework.h"
+
 
 class Application {
 public:
 	Application();
 	virtual ~Application();
 
-	BOOL initApplicationBase(LPWSTR lpCmdLine, HINSTANCE hInstance, int nCmdShow);
+	BOOL initApplicationBase(LPWSTR , HINSTANCE , int );
 	void runApplicationBase();
 	void cleanupApplicationBase();
 
+	inline long getViewportWidth() const { return m_ViewportDims.right; } 
+	inline long getViewportHeight() const { return m_ViewportDims.bottom; }
 
 protected:
-	virtual BOOL Init(LPWSTR lpCmdLine) = 0;
-	virtual void Run(double frameTime, float fps) = 0;
+	virtual BOOL Init(LPWSTR ) = 0;
+	virtual void Run(double , float ) = 0;
 	virtual void Done() = 0;
 
 private:
@@ -29,22 +37,22 @@ private:
 
 	LARGE_INTEGER m_startTime, m_timerFrequency;
 
-	ATOM registerWindowClass(HINSTANCE hInstance);
+	ATOM registerWindowClass(HINSTANCE );
 	void unregisterWindowClass();
 
-	BOOL initInstance(HINSTANCE hInstance, int nCmdShow);
+	BOOL initInstance(HINSTANCE , int );
 	void destroyInstance();
 
 	BOOL handleMessages();
 
-	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK WndProc(HWND , UINT , WPARAM , LPARAM );
 
 	inline void startFrameTimer() {
         QueryPerformanceFrequency(&m_timerFrequency); 
         QueryPerformanceCounter(&m_startTime);
 	}
 
-	inline double getFrameTime() {
+	inline double getFrameTime() const {
 		LARGE_INTEGER endTime;
 		QueryPerformanceCounter(&endTime);
 
@@ -54,6 +62,9 @@ private:
 
 		return static_cast<double>(endTime.QuadPart - m_startTime.QuadPart) / m_timerFrequency.QuadPart;
 	}
+
+	BOOL initOpenGL(BYTE, BYTE, BYTE);
+	void destroyOpenGL();
 };
 
 //

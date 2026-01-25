@@ -1,3 +1,8 @@
+//
+// OpenGL framework and demo boilerplate
+// (c) 2026 by Sergei Kuratiov. MIT License
+//
+
 #include "Application.h"
 #include "resource.h"
 
@@ -42,7 +47,7 @@ Application::~Application() {
 //
 BOOL Application::initApplicationBase(LPWSTR lpCmdLine, HINSTANCE hInstance, int nCmdShow) {
 
-    if (!registerWindowClass(hInstance) || !initInstance(hInstance, nCmdShow)) {
+    if (!registerWindowClass(hInstance) || !initInstance(hInstance, nCmdShow) || !initOpenGL(32, 24, 8)) {
         return FALSE;
     }
 
@@ -74,7 +79,7 @@ void Application::runApplicationBase() {
             m_frameCounter = 0;
         }
 
-        frameTime = getFrameTime();
+        if (m_hDC) SwapBuffers(m_hDC);
     }
 }
 
@@ -84,7 +89,10 @@ void Application::runApplicationBase() {
 void Application::cleanupApplicationBase() {
     this->Done();
 
+    destroyOpenGL();
+
     unregisterWindowClass();
+    
     destroyInstance();
 }
 
@@ -225,4 +233,82 @@ BOOL Application::handleMessages() {
     }
 
     return TRUE;
+}
+
+
+BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits) {
+    int nPfdNumber = 0;
+    HGLRC hContextGL3x = 0;
+
+    PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),
+        1,
+        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+        PFD_TYPE_RGBA,
+        nColorBits,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        nDepthBits,
+        nStencilBits,
+        0,
+        PFD_MAIN_PLANE,
+        0, 0, 0, 0
+    };
+
+    // Choose a pixel format
+    if (0 == (nPfdNumber = ChoosePixelFormat(m_hDC, &pfd))) return FALSE;
+
+    // Set the pixel format for the device context
+    if (FALSE == SetPixelFormat(m_hDC, nPfdNumber, &pfd)) return FALSE;
+
+    // Describe it
+    if (0 == DescribePixelFormat(m_hDC, nPfdNumber, sizeof(PIXELFORMATDESCRIPTOR), &pfd)) return -4;
+
+    // Create OpenGL context
+    if (NULL == (m_hGLRC = wglCreateContext(m_hDC))) return FALSE;
+
+    // Make it current
+    if (FALSE == wglMakeCurrent(m_hDC, m_hGLRC)) return FALSE;
+
+    if (GLEW_OK != glewInit()) {
+        return FALSE;
+    }
+
+    int attribList[] = {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+        WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+        WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+        0, 0
+    };
+
+    // Create OpenGL >=3.x context
+    HGLRC hGLRC = NULL;
+    if (wglewIsSupported("WGL_ARB_create_context")) {
+        if (NULL != (hGLRC = wglCreateContextAttribsARB(m_hDC, 0, attribList))) {
+            wglMakeCurrent(NULL, NULL);
+            wglDeleteContext(m_hGLRC);
+
+            m_hGLRC = hGLRC;
+            if (FALSE == wglMakeCurrent(m_hDC, m_hGLRC)) return FALSE;
+        }
+    }
+    else {
+        return FALSE;
+    }
+
+    // Lets preinit here
+    glViewport(0, 0, m_ViewportDims.right, m_ViewportDims.bottom);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+
+    return TRUE;
+}
+
+void Application::destroyOpenGL() {
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(m_hGLRC);
+
+    ReleaseDC(m_hWnd, m_hDC);
+    m_hDC = NULL;
 }

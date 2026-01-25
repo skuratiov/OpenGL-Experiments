@@ -11,6 +11,8 @@
 //
 Demo* Demo::m_pInstance = nullptr;
 
+Renderer* g_pRenderer = Renderer::getInstance();
+
 //
 // Constructor / destructor
 //
@@ -25,6 +27,9 @@ Demo::~Demo() {
 //	Init 
 //
 BOOL Demo::Init(LPWSTR lpCmdLine) {
+	
+	g_pRenderer->initScene();
+
 	return TRUE;
 }
 
@@ -33,9 +38,8 @@ BOOL Demo::Init(LPWSTR lpCmdLine) {
 // Run
 //
 void Demo::Run(double frameTime, float fps) {
-	Renderer* pRenderer = Renderer::getInstance();
 
-	pRenderer->drawFrame(frameTime);
+	g_pRenderer->drawFrame(frameTime);
 }
 
 

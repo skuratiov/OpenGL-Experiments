@@ -74,7 +74,7 @@ void Application::runApplicationBase() {
         m_timeAccumulator += frameTime;
 
         if (m_frameCounter >= 50) {
-            m_currentFPS = 50.0f / m_timeAccumulator;
+            m_currentFPS = 50.0f / ((float) m_timeAccumulator);
             m_timeAccumulator = 0.0;
             m_frameCounter = 0;
         }

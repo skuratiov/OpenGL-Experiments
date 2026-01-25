@@ -20,8 +20,11 @@ Renderer::Renderer() {
 Renderer::~Renderer() {
 }
 
+// Init scene
+void Renderer::initScene() {
+}
 
-// drawFrame()
+// Draw frame
 void Renderer::drawFrame(double frameTime) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

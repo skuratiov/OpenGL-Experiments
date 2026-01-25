@@ -14,6 +14,7 @@ public:
 	Renderer(const Renderer&) = delete;
 	virtual ~Renderer();
 
+	void initScene();
 	void drawFrame(double );
 
 private:

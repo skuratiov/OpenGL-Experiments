@@ -139,7 +139,7 @@ Image::~Image() {
 void Image::genCheckboard() {
 }
 
-BOOL Image::fromDDS(const char* lpFileName, uint16_t filterMode, bool maxQuality) {
+BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQuality) {
 
 	std::ifstream file(lpFileName, std::ios::binary | std::ios::ate);
 
@@ -432,7 +432,7 @@ BOOL Image::fromDDS(const char* lpFileName, uint16_t filterMode, bool maxQuality
 	return TRUE;
 }
 
-BOOL Image::fromKTX(const char* lpFileName, uint16_t filterMode, bool maxQuality) {
+BOOL Image::fromKTX(const char* lpFileName, unsigned short filterMode, bool maxQuality) {
 
 	std::ifstream file(lpFileName, std::ios::binary | std::ios::ate);
 	if (!file) return -1;

@@ -3,8 +3,10 @@
 // (c) 2026 by Sergei Kuratiov. MIT License
 //
 
-#include"framework.h"
+#include "framework.h"
+
 #include "Renderer.h"
+#include "Image.h"
 
 //
 //  Globals
@@ -22,6 +24,8 @@ Renderer::~Renderer() {
 
 // Init scene
 void Renderer::initScene() {
+    Image image;
+    image.fromDDS("../Images/metal.dds", TEXFILTER_MODE::LINEAR_ANISO);
 }
 
 // Draw frame

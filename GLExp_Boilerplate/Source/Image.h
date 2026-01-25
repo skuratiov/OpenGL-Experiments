@@ -20,15 +20,15 @@ public:
 	virtual ~Image();
 
 	void fromTGA(const char *);
-	BOOL fromDDS(const char *, uint16_t , bool maxQuality = true);
-	BOOL fromKTX(const char*, uint16_t, bool maxQuality = true);
+	BOOL fromDDS(const char *, unsigned short , bool maxQuality = true);
+	BOOL fromKTX(const char*, unsigned short , bool maxQuality = true);
 
 private:
 	GLenum m_GLTarget;
 	GLuint m_GLTexture;
 
-	uint32_t m_nWidth, m_nHeight, m_nDepth;
-	uint32_t m_nChannels, m_nCompression;
+	unsigned int m_nWidth, m_nHeight, m_nDepth;
+	unsigned int m_nChannels, m_nCompression;
 
 	void genCheckboard();
 };

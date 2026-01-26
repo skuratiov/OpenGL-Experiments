@@ -47,6 +47,22 @@ struct DDSHeader {
 };
 #pragma pack(pop)
 
+#pragma pack(push)
+#pragma pack(1)
+struct DDS_HEADER_DXT10 {
+	uint32_t dxgiFormat;
+	uint32_t resourceDimension;
+	uint32_t miscFlag;
+	uint32_t arraySize;
+	uint32_t miscFlags2;
+};
+#pragma pack(pop)
+
+enum DXGI_FORMAT {
+	DXGI_FORMAT_BC7_UNORM = 98,
+	DXGI_FORMAT_BC7_UNORM_SRGB = 99,
+};
+
 #define DDPF_ALPHAPIXELS 0x00000001 
 #define DDPF_FOURCC      0x00000004 
 #define DDPF_RGB         0x00000040
@@ -77,6 +93,7 @@ struct DDSHeader {
 
 #define FOURCC(a,b,c,d)((d<<24)|(c<<16)|(b<<8)|(a))
 
+
 //
 // KTX defs
 // taken from etcpack.cxx by Ericsson AB 2005.
@@ -99,14 +116,13 @@ const unsigned char KTXFileIdentifier[] = KTX_IDENTIFIER_REF;
 //
 //	KTX file header structure
 //	Taken from ktx.h by Georg Kolling, Imagination Technology and Mark Callow, HI Corporation, original (c) 2010 The Khronos Group, Inc.
-//  Modified by myself
 //
 typedef struct TKTXTextureInfo {
 	unsigned char Identifier[12]; 		// File identifier
 	unsigned int nEndianness;			// Endianness
 	unsigned int glType; 				// The type of the image data. Values are the same as in the @p type parameter of glTexImage*D. Must be 0 for compressed images.
 	unsigned int glTypeSize;			// The data type size to be used in case of endianness conversion.
-	unsigned int glFormat;				//  The format of the image(s). Values are the same as in the format parameter of glTexImage*D. Must be 0 for compressed images.
+	unsigned int glFormat;				// The format of the image(s). Values are the same as in the format parameter of glTexImage*D. Must be 0 for compressed images.
 	unsigned int glInternalFormat;		// The internal format of the image(s). Values are the same as for the internalformat parameter of glTexImage*2D.
 	unsigned int glBaseInternalFormat;	// The base internalformat of the image(s).
 	unsigned int pixelWidth; 			// Width of the image for texture level 0, in pixels.
@@ -123,6 +139,26 @@ typedef struct TKTXImageInfo {
 	unsigned char* data;  		// Pointer to the image data.
 } TKTXImageInfo;
 
+//
+// TGA 
+//
+#pragma pack(push, 1)
+struct TGAHeader {
+	uint8_t  idLength;
+	uint8_t  colorMapType;
+	uint8_t  imageType;
+	uint16_t colorMapFirstEntryIndex;
+	uint16_t colorMapLength;
+	uint8_t  colorMapEntrySize;
+	uint16_t xOrigin;
+	uint16_t yOrigin;
+	uint16_t width;
+	uint16_t height;
+	uint8_t  pixelDepth;
+	uint8_t  imageDescriptor;
+};
+#pragma pack(pop)
+
 
 //
 //	Constructor / destructor
@@ -130,13 +166,10 @@ typedef struct TKTXImageInfo {
 Image::Image() {
 	m_GLTexture = m_GLTarget = 0;
 	m_nWidth = m_nHeight = m_nDepth = m_nDepth = 0;
-	m_nCompression = m_nChannels = 0;
+	m_nCompression = m_nBitsPerPx = 0;
 }
 
 Image::~Image() {
-}
-
-void Image::genCheckboard() {
 }
 
 BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQuality) {
@@ -153,7 +186,7 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 	uint8_t *buffer = new uint8_t[fileSize];
 
 	file.read(reinterpret_cast<char*>(buffer), fileSize);
-	if (!file) return -3; 
+	if (!file) return -2; 
 
 	file.close();
 
@@ -162,20 +195,20 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 	if (fileHeader->dwMagic != FOURCC('D', 'D', 'S', ' ')) {
 		delete[] buffer;
 		buffer = nullptr;
-		return -5;
+		return -3;
 	}
 
 	if (fileHeader->dwSize != 124 ||
 		fileHeader->ddpfPixelFormat.dwSize != 32) {
 		delete[] buffer;
 		buffer = nullptr;
-		return -6;
+		return -4;
 	}
 
 	m_nWidth = fileHeader->dwWidth;
 	m_nHeight = fileHeader->dwHeight;
 	m_nDepth = fileHeader->dwDepth;
-	m_nChannels = fileHeader->ddpfPixelFormat.dwRGBBitCount;
+	m_nBitsPerPx = fileHeader->ddpfPixelFormat.dwRGBBitCount;
 
 	uint32_t mipCount = fileHeader->dwMipMapCount;
 	if (mipCount == 0) mipCount = 1;
@@ -197,22 +230,55 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 	}
 
 
-	m_nCompression = 0; 
-	switch (fileHeader->ddpfPixelFormat.dwFourCC) {
-	case FOURCC('D', 'X', 'T', '1'):
-		m_nCompression = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-		break;
+	m_nCompression = 0;
 
-	case FOURCC('D', 'X', 'T', '3'):
-		m_nCompression = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-		break;
+	bool hasDX10 = false;
+	DDS_HEADER_DXT10* dx10 = nullptr;
 
-	case FOURCC('D', 'X', 'T', '5'):
-		m_nCompression = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-		break;
+	if (fileHeader->ddpfPixelFormat.dwFourCC == FOURCC('D', 'X', '1', '0')) {
+		hasDX10 = true;
+
+		if (fileSize < sizeof(DDSHeader) + sizeof(DDS_HEADER_DXT10)) {
+			delete[] buffer;
+			return -5; 
+		}
+
+		dx10 = (DDS_HEADER_DXT10*) (buffer + sizeof(DDSHeader));
+
+		switch (dx10->dxgiFormat) {
+		case DXGI_FORMAT_BC7_UNORM:
+			m_nCompression = GL_COMPRESSED_RGBA_BPTC_UNORM;
+			break;
+
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+			m_nCompression = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
+			break;
+		
+		default:
+			delete[] buffer;
+			buffer = nullptr;
+			return -6;
+		}
+	}
+	else {
+		switch (fileHeader->ddpfPixelFormat.dwFourCC) {
+		case FOURCC('D', 'X', 'T', '1'):
+			m_nCompression = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+			break;
+
+		case FOURCC('D', 'X', 'T', '3'):
+			m_nCompression = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+			break;
+
+		case FOURCC('D', 'X', 'T', '5'):
+			m_nCompression = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			break;
+		}
 	}
 
 	uint8_t *pixelData = buffer + sizeof(DDSHeader);
+	if (hasDX10)
+		pixelData += sizeof(DDS_HEADER_DXT10);
 
 	glGenTextures(1, &m_GLTexture);
 	glBindTexture(m_GLTarget, m_GLTexture);
@@ -228,7 +294,7 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 	GLenum internalFmt = 0;
 
 	if (!m_nCompression) {
-		switch (m_nChannels) {
+		switch (m_nBitsPerPx) {
 		case 8:
 			pixelFormat = GL_ALPHA;
 			internalFmt = maxQuality ? GL_ALPHA8 : GL_ALPHA;
@@ -320,11 +386,15 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 			if (m_nCompression) {
 				if (m_nHeight == 1) {
 					uint32_t block = (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) ? 8 : 16;
+					if (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT)
+						block = 8;
 					size = ((w + 3) / 4) * block;
 					if (ptr + size > bufferEnd) break;
 					glCompressedTexImage1D(GL_TEXTURE_1D, mip, m_nCompression, w, 0, size, ptr);
 				} else {
 					uint32_t block = (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) ? 8 : 16;
+					if (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT)
+						block = 8;
 					size = ((h + 3) / 4) * block;
 					if (ptr + size > bufferEnd) break;
 					glCompressedTexImage1D(GL_TEXTURE_1D, mip, m_nCompression, h, 0, size, ptr);
@@ -332,11 +402,11 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 			}
 			else {
 				if (m_nHeight == 1) {
-					size = w * (m_nChannels >> 3);
+					size = w * (m_nBitsPerPx >> 3);
 					if (ptr + size > bufferEnd) break;
 					glTexImage1D(GL_TEXTURE_1D, mip, internalFmt, w, 0, pixelFormat, GL_UNSIGNED_BYTE, ptr);
 				} else {
-					size = h * (m_nChannels >> 3);
+					size = h * (m_nBitsPerPx >> 3);
 					if (ptr + size > bufferEnd) break;
 					glTexImage1D(GL_TEXTURE_1D, mip, internalFmt, h, 0, pixelFormat, GL_UNSIGNED_BYTE, ptr);
 				}
@@ -356,6 +426,8 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 
 			if (m_nCompression) {
 				uint32_t block = (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) ? 8 : 16;
+				if (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT)
+					block = 8;
 				uint32_t bw = (w + 3) / 4;
 				uint32_t bh = (h + 3) / 4;
 				uint32_t sliceSize = bw * bh * block;
@@ -364,7 +436,7 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 				glCompressedTexImage3D(GL_TEXTURE_3D, mip, m_nCompression, w, h, d, 0, size, ptr);
 			}
 			else {
-				size = w * h * d * (m_nChannels >> 3);
+				size = w * h * d * (m_nBitsPerPx >> 3);
 				if (ptr + size > bufferEnd) break;
 				glTexImage3D(GL_TEXTURE_3D, mip, internalFmt, w, h, d, 0, pixelFormat, GL_UNSIGNED_BYTE, ptr);
 			}
@@ -384,11 +456,13 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 			for (mip = 0; mip < mipCount; mip++) {
 				if (m_nCompression) {
 					uint32_t block = (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) ? 8 : 16;
+					if (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT)
+						block = 8;
 					size = ((w + 3) / 4) * ((h + 3) / 4) * block;
 					if (ptr + size > bufferEnd) break;
 					glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mip, m_nCompression, w, h, 0, size, ptr);
 				} else {
-					size = w * h * (m_nChannels >> 3);
+					size = w * h * (m_nBitsPerPx >> 3);
 					if (ptr + size > bufferEnd) break;
 					glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mip, internalFmt, w, h, 0, pixelFormat, GL_UNSIGNED_BYTE, ptr);
 				}
@@ -405,12 +479,14 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 		for (mip = 0; mip < mipCount; mip++) {
 			if (m_nCompression) {
 				uint32_t block = (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) ? 8 : 16;
+				if (m_nCompression == GL_COMPRESSED_RGB_S3TC_DXT1_EXT)
+					block = 8;
 				size = ((w + 3) / 4) * ((h + 3) / 4) * block;
 				if (ptr + size > bufferEnd) break;
 				glCompressedTexImage2D(GL_TEXTURE_2D, mip, m_nCompression, w, h, 0, size, ptr);
 			}
 			else {
-				size = w * h * (m_nChannels >> 3);
+				size = w * h * (m_nBitsPerPx >> 3);
 				if (ptr + size > bufferEnd) break;
 				glTexImage2D(GL_TEXTURE_2D, mip, internalFmt, w, h, 0, pixelFormat, GL_UNSIGNED_BYTE, ptr);
 			}
@@ -488,7 +564,7 @@ BOOL Image::fromKTX(const char* lpFileName, unsigned short filterMode, bool maxQ
 	}
 
 	m_nCompression = (hdr->glType == 0) ? hdr->glInternalFormat : 0;
-	m_nChannels = (hdr->glFormat == 0) ? 0 : 8; 
+	m_nBitsPerPx = (hdr->glFormat == 0) ? 0 : 8;
 
 
 	uint8_t* ptr = buffer + sizeof(TKTXTextureInfo) + hdr->bytesOfKeyValueData;
@@ -561,6 +637,278 @@ BOOL Image::fromKTX(const char* lpFileName, unsigned short filterMode, bool maxQ
 	return TRUE;
 }
 
+BOOL Image::fromTGA(const char* lpFileName, unsigned short filterMode, bool maxQuality) {
+	std::ifstream file(lpFileName, std::ios::binary | std::ios::ate);
+	if (!file) return -1;
 
-void Image::fromTGA(const char* lpFileName) {
+	std::streamsize fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+	uint8_t* buffer = new uint8_t[fileSize];
+	if (!file.read(reinterpret_cast<char*>(buffer), fileSize)) {
+		delete[] buffer;
+		return -2;
+	}
+
+	auto decodeTga = [&](uint8_t *fileContent, uint32_t fileSize,  
+		uint32_t *width, uint32_t *height, uint32_t *bpp, uint8_t **pixelsPtr) {
+		if (fileSize < sizeof(TGAHeader)) return -1;
+
+		const TGAHeader* hdr = reinterpret_cast<const TGAHeader*>(fileContent);
+
+		const size_t offset = sizeof(TGAHeader) + hdr->idLength;
+		if (fileSize <= offset) return -2;
+
+		bool isColor = hdr->imageType == 2 || hdr->imageType == 10;
+		bool isGray = hdr->imageType == 3 || hdr->imageType == 11;
+		bool isMapped = hdr->imageType == 1 || hdr->imageType == 9;
+		bool isRLE = hdr->imageType == 9 || hdr->imageType == 10 || hdr->imageType == 11;
+		bool flipY = !(hdr->imageDescriptor & 0x20);
+
+		const size_t pixelCount = hdr->width * hdr->height;
+
+		const uint8_t* src = fileContent + offset;
+		const uint8_t* end = fileContent + fileSize;
+
+		// palette setup
+		const uint8_t* palette = nullptr;
+		size_t paletteBpp = hdr->colorMapEntrySize / 8;
+		size_t paletteSize = hdr->colorMapLength * paletteBpp;
+
+		if (isMapped) {
+			if (hdr->colorMapType != 1 || paletteBpp < 1 || paletteBpp > 4)
+				return -3;
+
+			palette = fileContent + sizeof(TGAHeader) + hdr->idLength;
+			if (fileSize < offset + paletteSize)
+				return -4;
+			src += paletteSize;
+		}
+
+		uint8_t srcBytes =
+			isMapped ? 1 :
+			isGray ? 1 :
+			hdr->pixelDepth / 8;
+
+		uint8_t dstBytes =
+			isMapped ? 3 :
+			isGray ? 1 :
+			hdr->pixelDepth / 8;
+
+		uint8_t* pixels = new uint8_t[pixelCount * dstBytes];
+		size_t i = 0;
+
+		auto decodeMappedColor = [&](uint8_t index, uint8_t* out) {
+
+			const uint8_t* c = palette + index * paletteBpp;
+
+			if (paletteBpp == 3 || paletteBpp == 4) {
+				out[0] = c[0]; // B
+				out[1] = c[1]; // G
+				out[2] = c[2]; // R
+			}
+			else if (paletteBpp == 2) {
+				// 16-bit 555
+				uint16_t v = *(uint16_t*)c;
+
+				out[0] = ((v >> 0) & 31) << 3;
+				out[1] = ((v >> 5) & 31) << 3;
+				out[2] = ((v >> 10) & 31) << 3;
+			}
+			else if (paletteBpp == 1) {
+				out[0] = out[1] = out[2] = c[0];
+			}
+		};
+
+		if (isRLE) {
+			while (i < pixelCount && src < end) {
+				uint8_t packet = *src++;
+				bool rle = (packet & 0x80) != 0;
+				uint8_t count = (packet & 0x7F) + 1;
+
+				if (rle) {
+					if (src + srcBytes > end)
+						break;
+
+					const uint8_t* pixelData = src;
+					src += srcBytes;
+
+					for (uint8_t j = 0; j < count && i < pixelCount; ++j, ++i) {
+						if (isMapped) {
+							decodeMappedColor(pixelData[0], &pixels[i * dstBytes]);
+						} else {
+							std::memcpy(&pixels[i * dstBytes],pixelData, dstBytes);
+						}
+					}
+				} else {
+					// raw packet
+					for (uint8_t j = 0; j < count && i < pixelCount; ++j, ++i) {
+						if (src + srcBytes > end)
+							break;
+
+						if (isMapped) {
+							decodeMappedColor(*src,
+								&pixels[i * dstBytes]);
+							src += 1; 
+						} else {
+							std::memcpy(&pixels[i * dstBytes], src, dstBytes);
+							src += srcBytes;
+						}
+					}
+				}
+			}
+		}
+		else {
+			// Non-RLE (raw)
+			for (; i < pixelCount && src < end; ++i) {
+				if (isMapped) {
+					if (src + 1 > end) break;
+
+					uint8_t index = *src++;
+					decodeMappedColor(index, &pixels[i * dstBytes]);
+				} else {
+					if (src + srcBytes > end) break;
+					std::memcpy(&pixels[i * dstBytes], src, dstBytes);
+					src += srcBytes;
+				}
+			}
+		}
+
+		if (i != pixelCount) {
+			delete[] pixels;
+			return -4;
+		}
+
+		*width = hdr->width;
+		*height = hdr->height;
+		
+		if (isMapped)
+			*bpp = 24;
+		else if (isGray)
+			*bpp = 8;
+		else
+			*bpp = hdr->pixelDepth;
+
+		uint32_t bytesPerPx = (*bpp) >> 3;
+
+		if (flipY) {
+			uint32_t rowSize = (*width) * bytesPerPx;
+
+			for (uint32_t y = 0; y < *height / 2; y++) {
+				uint8_t* row1 = pixels + y * rowSize;
+				uint8_t* row2 = pixels + (*height - 1 - y) * rowSize;
+
+				for (uint32_t i = 0; i < rowSize; i++)
+					std::swap(row1[i], row2[i]);
+			}
+		}
+
+		*pixelsPtr = pixels;
+
+		return TRUE;
+	};
+
+	uint8_t* pixelMap = nullptr;
+
+	if (decodeTga(buffer, fileSize, &m_nWidth, &m_nHeight, &m_nBitsPerPx, &pixelMap) != TRUE) {
+		delete[] buffer;
+		return -3;
+	}
+
+	delete[] buffer; buffer = nullptr;
+
+	// Init OpenGL texture
+	if ((m_nHeight == 1) || (m_nWidth == 1)) {
+		m_GLTarget = GL_TEXTURE_1D;
+	}
+	else {
+		m_GLTarget = GL_TEXTURE_2D;
+	}
+
+	glGenTextures(1, &m_GLTexture);
+	glBindTexture(m_GLTarget, m_GLTexture);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_FALSE);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+	const uint8_t mipCount = 1;
+	bool useMips = (mipCount == 1 &&
+		(filterMode == TEXFILTER_MODE::LINEAR_MIPMAP_LINEAR ||
+			filterMode == TEXFILTER_MODE::LINEAR_MIPMAP_NEAREST));
+
+	switch (filterMode) {
+	case TEXFILTER_MODE::LINEAR:
+		glTexParameteri(m_GLTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(m_GLTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		break;
+	case TEXFILTER_MODE::LINEAR_MIPMAP_NEAREST:
+		glTexParameteri(m_GLTarget, GL_TEXTURE_MIN_FILTER, (mipCount > 1) ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+		glTexParameteri(m_GLTarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		break;
+	case TEXFILTER_MODE::LINEAR_MIPMAP_LINEAR:
+		glTexParameteri(m_GLTarget, GL_TEXTURE_MIN_FILTER, (mipCount > 1) ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+		glTexParameteri(m_GLTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		break;
+	default:
+		glTexParameteri(m_GLTarget, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(m_GLTarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+
+	GLenum pixelFormat = 0;
+	GLenum internalFmt = 0;
+
+	switch (m_nBitsPerPx) {
+	case 8:
+		pixelFormat = GL_ALPHA;
+		internalFmt = maxQuality ? GL_ALPHA8 : GL_ALPHA;
+		break;
+
+	case 16:
+		pixelFormat = GL_LUMINANCE_ALPHA;
+		internalFmt = GL_LUMINANCE_ALPHA;
+		break;
+
+	case 24:
+		pixelFormat = GL_BGR;
+		internalFmt = maxQuality ? GL_RGB8 : GL_RGB;
+		break;
+
+	case 32:
+		pixelFormat = GL_RGBA;
+		internalFmt = maxQuality ? GL_RGBA8 : GL_RGBA;
+		break;
+
+	default:
+		pixelFormat = GL_LUMINANCE;
+		internalFmt = GL_LUMINANCE8;
+	}
+
+	if (m_GLTarget == GL_TEXTURE_1D) {
+		if (m_nHeight == 1) {
+			glTexImage1D(GL_TEXTURE_1D, 0, internalFmt, m_nWidth, 0, pixelFormat, GL_UNSIGNED_BYTE, pixelMap);
+		} else {
+			glTexImage1D(GL_TEXTURE_1D, 0, internalFmt, m_nHeight, 0, pixelFormat, GL_UNSIGNED_BYTE, pixelMap);
+		}
+	} else {
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFmt, m_nWidth, m_nHeight, 0, pixelFormat, GL_UNSIGNED_BYTE, pixelMap);
+	}
+
+	if (useMips) {
+		glGenerateMipmap(m_GLTarget);
+	}
+
+	delete[] pixelMap; pixelMap = nullptr;
+
+	return TRUE; 
+}
+
+//
+// Private
+//
+
+void Image::genCheckboard() {
+
 }

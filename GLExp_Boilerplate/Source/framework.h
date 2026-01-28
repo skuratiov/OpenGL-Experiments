@@ -20,6 +20,7 @@
 #include <tchar.h>
 #include <time.h>
 #include <crtdbg.h>
+#include <cstdint>
 
 // OpenGL Header Files
 #define GLEW_STATIC

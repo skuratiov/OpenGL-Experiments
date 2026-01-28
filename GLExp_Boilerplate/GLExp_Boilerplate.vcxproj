@@ -134,6 +134,7 @@
     <ClInclude Include="Source\Renderer.h" />
     <ClInclude Include="Source\resource.h" />
     <ClInclude Include="Source\ShaderProgram.h" />
+    <ClInclude Include="Source\VertexBufferObject.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Application.cpp" />
@@ -141,6 +142,7 @@
     <ClCompile Include="Source\Image.cpp" />
     <ClCompile Include="Source\Renderer.cpp" />
     <ClCompile Include="Source\ShaderProgram.cpp" />
+    <ClCompile Include="Source\VertexBufferObject.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

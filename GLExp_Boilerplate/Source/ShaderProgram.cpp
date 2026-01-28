@@ -95,7 +95,6 @@ BOOL ShaderProgram::fromSrc(const char* lpVertShaderSrc, const char* lpFragShade
 
 void ShaderProgram::cleanup() {
 	if (m_nProgramId) {
-		
 		glDeleteProgram(m_nProgramId);
 		m_nProgramId = 0;
 	}

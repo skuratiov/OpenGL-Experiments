@@ -7,6 +7,7 @@
 
 #include "Renderer.h"
 #include "Image.h"
+#include "ShaderProgram.h"
 
 //
 //  Globals
@@ -26,6 +27,9 @@ Renderer::~Renderer() {
 void Renderer::initScene() {
     Image image;
     image.fromDDS("../Images/metal.dds", TEXFILTER_MODE::LINEAR_ANISO);
+
+    ShaderProgram shaderProgram;
+    shaderProgram.fromSrc("../Shaders/basic.vert", "../Shaders/basic.frag");
 }
 
 // Draw frame

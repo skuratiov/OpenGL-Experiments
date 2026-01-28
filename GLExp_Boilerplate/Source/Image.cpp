@@ -172,7 +172,7 @@ Image::Image() {
 Image::~Image() {
 }
 
-BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQuality) {
+BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode) {
 
 	std::ifstream file(lpFileName, std::ios::binary | std::ios::ate);
 
@@ -296,23 +296,23 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 	if (!m_nCompression) {
 		switch (m_nBitsPerPx) {
 		case 8:
-			pixelFormat = GL_ALPHA;
-			internalFmt = maxQuality ? GL_ALPHA8 : GL_ALPHA;
+			pixelFormat = GL_RED;
+			internalFmt = GL_R8;
 			break;
 
 		case 16:
-			pixelFormat = GL_LUMINANCE_ALPHA;
-			internalFmt = GL_LUMINANCE_ALPHA;
+			pixelFormat = GL_RG;
+			internalFmt = GL_RG8;
 			break;
 
 		case 24:
 			pixelFormat = GL_BGR;
-			internalFmt = maxQuality ? GL_RGB8 : GL_RGB;
+			internalFmt = GL_RGB8;
 			break;
 
 		case 32:
 			pixelFormat = GL_RGBA;
-			internalFmt = maxQuality ? GL_RGBA8 : GL_RGBA;
+			internalFmt = GL_RGBA8;
 			break;
 
 		default:
@@ -508,7 +508,7 @@ BOOL Image::fromDDS(const char* lpFileName, unsigned short filterMode, bool maxQ
 	return TRUE;
 }
 
-BOOL Image::fromKTX(const char* lpFileName, unsigned short filterMode, bool maxQuality) {
+BOOL Image::fromKTX(const char* lpFileName, unsigned short filterMode) {
 
 	std::ifstream file(lpFileName, std::ios::binary | std::ios::ate);
 	if (!file) return -1;
@@ -637,7 +637,7 @@ BOOL Image::fromKTX(const char* lpFileName, unsigned short filterMode, bool maxQ
 	return TRUE;
 }
 
-BOOL Image::fromTGA(const char* lpFileName, unsigned short filterMode, bool maxQuality) {
+BOOL Image::fromTGA(const char* lpFileName, unsigned short filterMode) {
 	std::ifstream file(lpFileName, std::ios::binary | std::ios::ate);
 	if (!file) return -1;
 
@@ -862,23 +862,23 @@ BOOL Image::fromTGA(const char* lpFileName, unsigned short filterMode, bool maxQ
 
 	switch (m_nBitsPerPx) {
 	case 8:
-		pixelFormat = GL_ALPHA;
-		internalFmt = maxQuality ? GL_ALPHA8 : GL_ALPHA;
+		pixelFormat = GL_RED;
+		internalFmt = GL_R8;
 		break;
 
 	case 16:
-		pixelFormat = GL_LUMINANCE_ALPHA;
-		internalFmt = GL_LUMINANCE_ALPHA;
+		pixelFormat = GL_RG;
+		internalFmt = GL_RG8;
 		break;
 
 	case 24:
 		pixelFormat = GL_BGR;
-		internalFmt = maxQuality ? GL_RGB8 : GL_RGB;
+		internalFmt = GL_RGB8;
 		break;
 
 	case 32:
 		pixelFormat = GL_RGBA;
-		internalFmt = maxQuality ? GL_RGBA8 : GL_RGBA;
+		internalFmt = GL_RGBA8 ;
 		break;
 
 	default:

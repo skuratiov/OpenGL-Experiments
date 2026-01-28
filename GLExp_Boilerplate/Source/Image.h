@@ -19,9 +19,11 @@ public:
 	Image();
 	virtual ~Image();
 
-	BOOL fromTGA(const char *, unsigned short, bool maxQuality = true);
-	BOOL fromDDS(const char *, unsigned short , bool maxQuality = true);
-	BOOL fromKTX(const char*, unsigned short , bool maxQuality = true);
+	BOOL fromTGA(const char *, unsigned short);
+	BOOL fromDDS(const char *, unsigned short);
+	BOOL fromKTX(const char*, unsigned short);
+
+	inline void bindTexture() const { glBindTexture(m_GLTarget, m_GLTexture); }
 
 private:
 	GLenum m_GLTarget;

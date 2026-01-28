@@ -24,7 +24,7 @@ void VertexBufferObject::createBuffers(void *vertexData, size_t vertexDataSize,
 	glBindBuffer(GL_ARRAY_BUFFER, m_nVertexBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, vertexDataSize, vertexData, GL_STATIC_DRAW);
 
-	size_t stride = 0;
+	GLsizei stride = 0;
 	m_hasIndex = false;
 	m_nIndexCount = 0;
 

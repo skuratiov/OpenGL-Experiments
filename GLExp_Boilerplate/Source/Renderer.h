@@ -21,11 +21,14 @@ public:
 	void setupView(long width, long height);
 	void initScene();
 	void drawFrame(double );
+	void cleanup();
 
 private:
 	static Renderer* m_pInstance;
 
 	glm::mat4 m_modelMatrix, m_viewMatrix, m_projectionMatrix;
+
+	float m_rotationAngle;
 
 protected:
 	Renderer();

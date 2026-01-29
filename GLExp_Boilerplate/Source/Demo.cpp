@@ -40,6 +40,7 @@ void Demo::Run(double frameTime, float fps) {
 
 // Done
 void Demo::Done() {
+	g_pRenderer->cleanup();
 }
 
 

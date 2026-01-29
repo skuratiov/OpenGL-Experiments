@@ -14,8 +14,8 @@ VertexBufferObject::~VertexBufferObject() {
 	deleteBuffers();
 }
 
-void VertexBufferObject::createBuffers(void *vertexData, size_t vertexDataSize, 
-	void *indexData, size_t indexDataSize, uint16_t format) {
+void VertexBufferObject::createBuffers(void *vertexData, GLsizei vertexDataSize,
+	void *indexData, GLsizei indexDataSize, uint16_t format) {
 	glGenVertexArrays(1, &m_nVertexArrayId);
 	glGenBuffers(1, &m_nVertexBufferObject);
 
@@ -76,15 +76,18 @@ void VertexBufferObject::createBuffers(void *vertexData, size_t vertexDataSize,
 			GL_STATIC_DRAW
 		);
 
-		m_nIndexCount = indexDataSize / sizeof(uint32_t);
+		m_nIndexCount = (GLsizei) (indexDataSize / sizeof(uint32_t));
 	}
 
-	m_nVertexCount = vertexDataSize / stride;
+	m_nVertexCount = (GLsizei) (vertexDataSize / stride);
 	
 	glBindVertexArray(0);
 }
 
 void VertexBufferObject::deleteBuffers() {
+	
+	glBindVertexArray(0);
+
 	if (m_nVertexBufferObject) {
 		glDeleteBuffers(1, &m_nVertexBufferObject);
 		m_nVertexBufferObject = 0;

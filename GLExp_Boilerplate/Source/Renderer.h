@@ -5,6 +5,10 @@
 
 #pragma once
 
+#include "Libs/glm/glm.hpp"
+#include "Libs/glm/gtc/matrix_transform.hpp"
+#include "Libs/glm/gtc/type_ptr.hpp"
+
 class Renderer {
 public:
 	static Renderer* getInstance() {
@@ -14,11 +18,14 @@ public:
 	Renderer(const Renderer&) = delete;
 	virtual ~Renderer();
 
+	void setupView(long width, long height);
 	void initScene();
 	void drawFrame(double );
 
 private:
 	static Renderer* m_pInstance;
+
+	glm::mat4 m_modelMatrix, m_viewMatrix, m_projectionMatrix;
 
 protected:
 	Renderer();

@@ -294,13 +294,7 @@ BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits
     else {
         return FALSE;
     }
-
-    // Lets preinit here
-    glViewport(0, 0, m_ViewportDims.right, m_ViewportDims.bottom);
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glCullFace(GL_BACK);
-    glEnable(GL_CULL_FACE);
+       
 
     return TRUE;
 }

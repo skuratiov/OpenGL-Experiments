@@ -22,30 +22,23 @@ Demo::Demo() {
 Demo::~Demo() {
 }
 
-
-//
 //	Init 
-//
 BOOL Demo::Init(LPWSTR lpCmdLine) {
 	
+	g_pRenderer->setupView(getViewportWidth(), getViewportHeight());
 	g_pRenderer->initScene();
 
 	return TRUE;
 }
 
-
-//
 // Run
-//
 void Demo::Run(double frameTime, float fps) {
 
 	g_pRenderer->drawFrame(frameTime);
 }
 
 
-//
 // Done
-//
 void Demo::Done() {
 }
 

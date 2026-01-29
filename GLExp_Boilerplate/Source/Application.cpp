@@ -29,8 +29,8 @@ Application::Application() {
     m_hGLRC = nullptr;
 
     m_ViewportDims.left = m_ViewportDims.top = 0;
-    m_ViewportDims.bottom = 600;
-    m_ViewportDims.right = 800;
+    m_ViewportDims.bottom = 768;
+    m_ViewportDims.right = 1024;
 
     m_startTime.QuadPart = 0;
     m_timerFrequency.QuadPart = 0;
@@ -60,13 +60,15 @@ BOOL Application::initApplicationBase(LPWSTR lpCmdLine, HINSTANCE hInstance, int
 // runApplicationBase
 //
 void Application::runApplicationBase() {
-    double frameTime = 1.0 / 60.0;
+    double frameTime = 0.0;
 
     while (handleMessages()) {
 
         startFrameTimer();
     
-        this->Run(frameTime, m_currentFPS);
+        Run(frameTime, m_currentFPS);
+
+        if (m_hDC) SwapBuffers(m_hDC);
 
         frameTime = getFrameTime();
 
@@ -74,12 +76,10 @@ void Application::runApplicationBase() {
         m_timeAccumulator += frameTime;
 
         if (m_frameCounter >= 50) {
-            m_currentFPS = 50.0f / ((float) m_timeAccumulator);
+            m_currentFPS = 50.0f / static_cast<float>(m_timeAccumulator);
             m_timeAccumulator = 0.0;
             m_frameCounter = 0;
         }
-
-        if (m_hDC) SwapBuffers(m_hDC);
     }
 }
 

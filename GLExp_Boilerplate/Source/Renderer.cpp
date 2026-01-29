@@ -98,7 +98,7 @@ void Renderer::initScene() {
 void Renderer::drawFrame(double frameTime) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_rotationAngle += (float) frameTime * 1000.0f;
+    m_rotationAngle += (float) frameTime * 50.0f;
     if (m_rotationAngle > 360.0f) { m_rotationAngle -= 360.0f; }
 
     m_modelMatrix = glm::mat4(1.0f);

@@ -641,7 +641,7 @@ BOOL Image::fromTGA(const char* lpFileName, unsigned short filterMode) {
 	std::ifstream file(lpFileName, std::ios::binary | std::ios::ate);
 	if (!file) return -1;
 
-	std::streamsize fileSize = file.tellg();
+	uint32_t fileSize = (uint32_t) file.tellg();
 	file.seekg(0, std::ios::beg);
 	uint8_t* buffer = new uint8_t[fileSize];
 	if (!file.read(reinterpret_cast<char*>(buffer), fileSize)) {

@@ -13,16 +13,24 @@ uniform vec3 lightPos;
 out vec4 FragColor;
 
 void main() {
-    vec3 N = texture(normalMap, vUV).rgb;
-    N = normalize(N * 2.0 - 1.0);  // [0,1] -> [-1,1]
+    const vec3 lightPos = vec3(0.0, 0.0, 4.0);   
+    const vec3 viewPos  = vec3(0.0, 0.0, 4.0);   
+    const float shininess = 32.0;
 
-    N = normalize(vTBN * N);
+    vec3 N = texture(normalMap, vUV).rgb;
+    N = normalize(N * 2.0 - 1.0);         // [0,1] -> [-1,1]
+    N = normalize(vTBN * N);              // tangent -> world space
 
     vec3 L = normalize(lightPos - vFragPos);
-
     float diff = max(dot(N, L), 0.0);
 
-    vec3 color = texture(diffuseMap, vUV).rgb * diff;
+    vec3 V = normalize(viewPos - vFragPos);
+    vec3 H = normalize(L + V);
+    float spec = pow(max(dot(N,H), 0.0), shininess);
 
-    FragColor = vec4(color, 1.0);
+    vec3 color = texture(diffuseMap, vUV).rgb;
+    vec3 finalColor = color * diff + vec3(1.0) * spec;
+
+    FragColor = vec4(finalColor, 1.0);
 }
+

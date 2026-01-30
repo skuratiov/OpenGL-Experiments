@@ -55,8 +55,11 @@ void Renderer::setupView(long width, long height) {
 
 // Init scene
 void Renderer::initScene() {
-    image.fromDDS("../Images/Wood.dds", TEXFILTER_MODE::LINEAR_ANISO);
-    normalmap.fromDDS("../Images/WoodDOT3.dds", TEXFILTER_MODE::LINEAR_ANISO);
+    //image.fromDDS("../Images/Wood.dds", TEXFILTER_MODE::LINEAR_ANISO);
+    //normalmap.fromDDS("../Images/WoodDOT3.dds", TEXFILTER_MODE::LINEAR_ANISO);
+
+    image.fromTGA("../Images/bricks.tga", TEXFILTER_MODE::LINEAR_ANISO);
+    normalmap.fromTGA("../Images/bricks_n.tga", TEXFILTER_MODE::LINEAR_ANISO);
 
     shaderProgram.fromSrc("../Shaders/bumpmap.vert", "../Shaders/bumpmap.frag");
     

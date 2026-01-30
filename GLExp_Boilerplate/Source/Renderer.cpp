@@ -99,14 +99,14 @@ void Renderer::drawFrame(double frameTime) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_rotationAngle += (float) frameTime * 50.0f;
-    if (m_rotationAngle > 360.0f) { m_rotationAngle -= 360.0f; }
+    m_rotationAngle = fmod(m_rotationAngle, 360.0f);
 
     m_modelMatrix = glm::mat4(1.0f);
+    m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(1.0f));
     m_modelMatrix = glm::translate(m_modelMatrix, glm::vec3(0.0f, 0.0f, 1.0f));
     m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(1.0f, 0.0f, 0.0f));
     m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(0.0f, 1.0f, 0.0f));
     m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
-    m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(1.0f));
 
     image.bindTexture();
 

@@ -3,6 +3,7 @@
 // (c) 2026 by Sergei Kuratiov. MIT License
 //
 
+#include "framework.h"
 #include "Demo.h"
 #include "Renderer.h"
 
@@ -25,6 +26,8 @@ Demo::~Demo() {
 //	Init 
 BOOL Demo::Init(LPWSTR lpCmdLine) {
 	
+	setWindowTitle(L"Bump mapping");
+
 	g_pRenderer->setupView(getViewportWidth(), getViewportHeight());
 	g_pRenderer->initScene();
 

@@ -24,6 +24,8 @@ Demo::~Demo() {
 
 //	Init 
 BOOL Demo::Init(LPWSTR lpCmdLine) {
+
+	setWindowTitle(L"Boilerplate code");
 	
 	g_pRenderer->setupView(getViewportWidth(), getViewportHeight());
 	g_pRenderer->initScene();

@@ -306,3 +306,18 @@ void Application::destroyOpenGL() {
     ReleaseDC(m_hWnd, m_hDC);
     m_hDC = NULL;
 }
+
+void Application::setWindowTitle(LPCWSTR szTitle) const {
+    if (!m_hWnd || !szTitle) return;
+
+    WCHAR buffer[256]{};
+
+    int len = GetWindowTextW(m_hWnd, buffer, 256);
+
+    if (len <= 0 || len >= 253) return;
+
+    wcscat_s(buffer, L": ");
+    wcscat_s(buffer, szTitle);
+
+    SetWindowTextW(m_hWnd, buffer);
+}

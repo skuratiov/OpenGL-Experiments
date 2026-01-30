@@ -19,6 +19,8 @@ public:
 	inline long getViewportWidth() const { return m_ViewportDims.right; } 
 	inline long getViewportHeight() const { return m_ViewportDims.bottom; }
 
+	void setWindowTitle(LPCWSTR szTitle) const;
+
 protected:
 	virtual BOOL Init(LPWSTR ) = 0;
 	virtual void Run(double , float ) = 0;

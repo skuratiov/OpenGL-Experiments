@@ -20,6 +20,6 @@ public:
 private:
 	GLuint m_textureArray;
 
-	Character m_char[128];
+	Character m_Chars[128];
 };
 

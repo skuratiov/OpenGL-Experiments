@@ -9,6 +9,7 @@
 // Constructor / destructor
 //
 TextPainter::TextPainter() {
+	memset((void*)m_Chars, 0, sizeof(m_Chars));
 	m_textureArray = 0;
 }
 
@@ -27,7 +28,7 @@ BOOL TextPainter::initFont() {
 
 	if (!file) { FT_Done_FreeType(ft); return -2; }
 
-	const FT_Long fileSize = file.tellg();
+	const FT_Long fileSize = (FT_Long)file.tellg();
 	file.seekg(0);
 
 	uint8_t* buffer = new uint8_t[fileSize];
@@ -54,7 +55,7 @@ BOOL TextPainter::initFont() {
 			if (FT_Load_Char(face, c, FT_LOAD_RENDER)) 
 				continue;
 
-			pChar = &m_char[c];
+			pChar = &m_Chars[c];
 
 			pChar->Size = glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows);
 			pChar->Bearing = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);

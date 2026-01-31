@@ -155,7 +155,10 @@
     <ClCompile Include="Source\VertexBufferObject.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Source\small.ico" />
+    <ResourceCompile Include="Source\resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Source\icon1.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

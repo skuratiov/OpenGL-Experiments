@@ -157,6 +157,9 @@
   <ItemGroup>
     <Image Include="Source\small.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Source\resource.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -109,6 +109,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>D:\DEV-PERSONAL\OpenGL_Experiments\GLExp_Freetype\Source\Libs\freetype\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,6 +128,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>D:\DEV-PERSONAL\OpenGL_Experiments\GLExp_Freetype\Source\Libs\freetype\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -144,6 +146,7 @@
     <ClInclude Include="Source\Renderer.h" />
     <ClInclude Include="Source\resource.h" />
     <ClInclude Include="Source\ShaderProgram.h" />
+    <ClInclude Include="Source\TextPainter.h" />
     <ClInclude Include="Source\VertexBufferObject.h" />
   </ItemGroup>
   <ItemGroup>
@@ -152,6 +155,7 @@
     <ClCompile Include="Source\Image.cpp" />
     <ClCompile Include="Source\Renderer.cpp" />
     <ClCompile Include="Source\ShaderProgram.cpp" />
+    <ClCompile Include="Source\TextPainter.cpp" />
     <ClCompile Include="Source\VertexBufferObject.cpp" />
   </ItemGroup>
   <ItemGroup>

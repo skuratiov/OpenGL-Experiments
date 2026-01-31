@@ -8,6 +8,7 @@
 #include "Image.h"
 #include "ShaderProgram.h"
 #include "VertexBufferObject.h"
+#include "TextPainter.h"
 
 //
 //  Globals
@@ -15,6 +16,7 @@
 Renderer* Renderer::m_pInstance = nullptr;
 
 Image image;
+TextPainter textPainter;
 ShaderProgram shaderProgram;
 VertexBufferObject cube;
 
@@ -90,8 +92,10 @@ void Renderer::initScene() {
         20, 21, 22, 22, 23, 20  // Bottom
     };
 
-
     cube.createBuffers(verts, sizeof(verts), indices, sizeof(indices), VERTEX_DATA_FORMAT::FLOAT_VX3UV2);
+
+
+    textPainter.initFont();
 }
 
 // Draw frame
@@ -129,5 +133,6 @@ void Renderer::drawFrame(double frameTime) {
 //
 void Renderer::cleanup() {
 
+    textPainter.cleanup();
     cube.deleteBuffers();
 }

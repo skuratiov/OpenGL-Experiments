@@ -46,8 +46,10 @@ BOOL TextPainter::initFont() {
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureArray);
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 64, 64, 128, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	if (FT_New_Memory_Face(ft, buffer, fileSize, 0, &face) == 0)  {
-		FT_Set_Pixel_Sizes(face, 64, 64);
+		FT_Set_Pixel_Sizes(face, 0, 64);
 		
 		Character* pChar = nullptr;
 

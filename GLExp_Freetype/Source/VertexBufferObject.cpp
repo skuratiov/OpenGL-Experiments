@@ -29,6 +29,11 @@ void VertexBufferObject::createBuffers(void *vertexData, GLsizei vertexDataSize,
 	m_nIndexCount = 0;
 
 	switch (format) {
+	case VERTEX_DATA_FORMAT::FLOAT_VX2:
+		stride = 2 * sizeof(float);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, (void*)0);
+		break;
 	case VERTEX_DATA_FORMAT::FLOAT_VX3:
 		stride = 3 * sizeof(float);
 		glEnableVertexAttribArray(0);
@@ -95,12 +100,12 @@ void VertexBufferObject::createBuffers(void *vertexData, GLsizei vertexDataSize,
 
 	m_nVertexCount = (GLsizei) (vertexDataSize / stride);
 	
-	glBindVertexArray(0);
+	unbind();
 }
 
 void VertexBufferObject::deleteBuffers() {
 	
-	glBindVertexArray(0);
+	unbind();
 
 	if (m_nVertexBufferObject) {
 		glDeleteBuffers(1, &m_nVertexBufferObject);

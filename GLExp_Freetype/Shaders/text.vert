@@ -1,19 +1,35 @@
 #version 450 core
 
-layout (location = 0) in vec3 inPos;   // x, y, layer
-layout (location = 1) in vec2 inUV;
+layout(location = 0) in vec2 inPos; // координаты квадрата: 0..1
 
-layout (location = 0) out vec3 TexCoord;
+uniform mat4 uProjection;
 
-layout (binding = 0) uniform sampler2DArray textTex;
+// uniform массивы с данными каждого символа
+uniform vec2 glyphPos[255];
+uniform vec2 glyphSize[255];
+uniform vec4 glyphUV[255];
+uniform int  glyphLayer[255];
 
-layout (std140, binding = 0) uniform Matrices
-{
-    mat4 projection;
-};
+out vec2 vUV;
+flat out int vLayer;
 
 void main()
 {
-    gl_Position = projection * vec4(inPos.xy, 0.0, 1.0);
-    TexCoord = vec3(inUV, inPos.z);
+    // Берём данные для текущего инстанса
+    int id = gl_InstanceID;
+
+    vec2 pos  = glyphPos[id];
+    vec2 size = glyphSize[id];
+    vec4 uv   = glyphUV[id];
+
+    // Вычисляем позицию вертекса на GPU
+    vec2 vertexPos = pos + inPos * size;
+
+    gl_Position = uProjection * vec4(vertexPos, 0.0, 1.0);
+
+    // Интерполяция UV для квадрата
+    vUV = mix(uv.xy, uv.zw, inPos);
+
+    // слой текстуры
+    vLayer = glyphLayer[id];
 }

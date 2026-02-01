@@ -9,14 +9,15 @@
 
 #include "TextPainter.h"
 
+#include <ostream>
+
+std::ofstream logFile("fontLog.txt");
 
 //
 // Constructor / destructor
 //
 TextPainter::TextPainter() {
 	memset((void*)m_Chars, 0, sizeof(m_Chars));
-	memset((void*)m_currentStringGlifs, 0, sizeof(m_currentStringGlifs));
-
 	m_textureArray = 0;
 }
 
@@ -31,7 +32,11 @@ BOOL TextPainter::initFont() {
         return -1;
     }
 
-	std::ifstream file(L"../Fonts/SourceCodePro-Regular.ttf", std::ios::binary | std::ios::ate);
+	//std::ifstream file(L"../Fonts/Roboto-Regular.ttf", std::ios::binary | std::ios::ate);
+
+	std::ifstream file(L"C:\\Windows\\Fonts\\arial.ttf", std::ios::binary | std::ios::ate);
+
+
 
 	if (!file) { FT_Done_FreeType(ft); return -2; }
 
@@ -51,13 +56,12 @@ BOOL TextPainter::initFont() {
 	glGenTextures(1, &m_textureArray);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureArray);
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 64, 64, 128, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 128, 128, 128, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	if (FT_New_Memory_Face(ft, buffer, fileSize, 0, &face) == 0)  {
-		FT_Set_Pixel_Sizes(face, 0, 64);
-
+		FT_Set_Pixel_Sizes(face, 0, 128);
 
 		for (unsigned char c = 0; c < 128; c++) {
 			if (FT_Load_Char(face, c, FT_LOAD_RENDER)) 
@@ -66,8 +70,16 @@ BOOL TextPainter::initFont() {
 			Character& ch = m_Chars[c];
 
 			ch.Size = glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows);
+			ch.Baseline = float(face->size->metrics.ascender >> 6);
 			ch.Bearing = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
-			ch.Advance = static_cast<unsigned int>(face->glyph->advance.x);
+			//ch.Advance = (static_cast<unsigned int>(face->glyph->advance.x)) >> 6;
+			ch.Advance = face->glyph->metrics.horiAdvance >> 6;
+			
+			/*
+			log << (wchar_t)c << "\t" << "horiAdvance: " << face->glyph->metrics.horiAdvance\
+				<< ", advance.x: " << face->glyph->advance.x\
+				<< ", advance.x >> 6: " << (face->glyph->advance.x >> 6) << std::endl;
+				*/
 
 			glTexSubImage3D(
 				GL_TEXTURE_2D_ARRAY,
@@ -83,7 +95,7 @@ BOOL TextPainter::initFont() {
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		}
+		}		
 	}
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
@@ -98,10 +110,10 @@ BOOL TextPainter::initFont() {
 		return -4;
 
 	GLfloat vertexData[] = {
-	   0.0f,1.0f,
-	   0.0f,0.0f,
-	   1.0f,1.0f,
-	   1.0f,0.0f,
+		0.0f,0.0f, // top-left
+		0.0f,1.0f, // bottom-left
+		1.0f,0.0f, // top-right
+		1.0f,1.0f  // bottom-right
 	};
 
 	m_textVertices.createBuffers(vertexData, sizeof(vertexData), nullptr, 0, VERTEX_DATA_FORMAT::FLOAT_VX2);
@@ -119,20 +131,75 @@ void TextPainter::cleanup() {
 	m_textureArray = 0;
 }
 
+bool once = true;
 
 void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, glm::vec3 color) {
-	scale = scale * 48.0f / 256.0f;
-	float copyX = x;
+	float currScale = scale;
+	float currentX = x, currentY = y;
+
+	glm::vec2 positions[255];
+	glm::vec2 sizes[255];
+	int layers[255];
+	glm::vec4 uvs[255];
+	
+	uint32_t stringPos = 0, stringSize = 0;
+	for (stringPos = 0; stringPos < 255; stringPos++) {
+		wchar_t c = lpszMessage[stringPos];
+		if (c == 0) break;
+
+		Character currChar = m_Chars[int(c)];
+			
+		float xpos = currentX + currChar.Bearing.x * currScale;
+		float ypos = currentY + (currChar.Baseline - currChar.Bearing.y) * currScale;
+
+		float w = float(currChar.Size.x) * currScale;
+		float h = float(currChar.Size.y) * currScale;
+
+		if (once) {
+			logFile << (char)c << ": Bearing.x = " << currChar.Bearing.x\
+				<< ", Advance = " << currChar.Advance\
+				<< ", scale = " << currScale\
+				<< ", step = " << currChar.Advance * currScale << std::endl;
+		
+		}
+	
+		positions[stringPos] = glm::vec2(xpos, ypos);
+		sizes[stringPos] = glm::vec2(w, h);
+		layers[stringPos] = int(c);
+
+		uvs[stringPos] = glm::vec4(
+			0.0, 0.0,
+			((float)(currChar.Size.x + currChar.Bearing.x) / 128.0f), 
+			((float)(currChar.Size.y) / 128.0f)); // full quad UV
+
+		currentX += static_cast<float>(currChar.Advance) * currScale;
+		
+		stringSize++;
+	}
+	once = false;
 	m_textShaderProgram.useProgram();
+	
+	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(1024), static_cast<float>(768), 0.0f);
+	glUniformMatrix4fv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "uProjection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	glUniform3f(glGetUniformLocation(m_textShaderProgram.getProgramId(), "textColor"), color.x, color.y, color.z);
-	
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureArray);
 
 	m_textVertices.bind();
 
+	glUniform2fv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphPos"), stringPos, &positions[0][0]);
+	glUniform2fv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphSize"), stringPos, &sizes[0][0]);
+	glUniform1iv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphLayer"), stringPos, layers);
+	glUniform4fv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphUV"), stringPos, &uvs[0][0]);
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, stringSize);
+
+	glDisable(GL_BLEND);
 
 	m_textVertices.unbind();
 }

@@ -47,7 +47,7 @@
 
 #if defined(_DEBUG)
 #pragma comment(lib, "Source/Libs/freetype/lib/x64/Debug/freetype.lib")
-#elif
+#else
 #pragma comment(lib, "Source/Libs/freetype/lib/x64/Release/freetype.lib")
 #endif
 

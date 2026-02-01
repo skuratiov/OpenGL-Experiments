@@ -20,7 +20,7 @@ public:
 	virtual ~Demo();
 
 	BOOL Init(LPWSTR );
-	void Run(double , float );
+	void Run(double, float);
 	void Done();
 		
 protected:

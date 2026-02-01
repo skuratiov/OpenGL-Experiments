@@ -25,7 +25,7 @@ Demo::~Demo() {
 //	Init 
 BOOL Demo::Init(LPWSTR lpCmdLine) {
 
-	setWindowTitle(L"Boilerplate code");
+	setWindowTitle(L"Freetype text rendering");
 	
 	g_pRenderer->setupView(getViewportWidth(), getViewportHeight());
 	g_pRenderer->initScene();
@@ -35,8 +35,8 @@ BOOL Demo::Init(LPWSTR lpCmdLine) {
 
 // Run
 void Demo::Run(double frameTime, float fps) {
-
-	g_pRenderer->drawFrame(frameTime);
+	
+	g_pRenderer->drawFrame(frameTime, fps);
 }
 
 

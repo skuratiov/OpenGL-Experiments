@@ -1,15 +1,20 @@
 #version 450 core
 
-layout (location = 0) in vec3 TexCoord;
-layout (location = 0) out vec4 FragColor;
+in vec2 vUV;
+flat in int vLayer;
 
-layout (binding = 0) uniform sampler2DArray textTex;
+out vec4 FragColor;
 
-layout (location = 1) uniform vec3 textColor;
+uniform sampler2DArray textAtlas; // массив текстур
+uniform vec3 textColor;
 
 void main()
 {
-    float alpha = texture(textTex, TexCoord).r;
+    // читаем красный канал текстуры (альфа)
+    float alpha = texture(textAtlas, vec3(vUV, vLayer)).r;
 
+    // комбинируем с цветом текста
     FragColor = vec4(textColor, alpha);
+
+    // можно добавить premultiplied alpha, если надо
 }

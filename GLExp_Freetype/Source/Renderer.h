@@ -18,9 +18,9 @@ public:
 	Renderer(const Renderer&) = delete;
 	virtual ~Renderer();
 
-	void setupView(long width, long height);
+	void setupView(long, long);
 	void initScene();
-	void drawFrame(double );
+	void drawFrame(double, float);
 	void cleanup();
 
 private:

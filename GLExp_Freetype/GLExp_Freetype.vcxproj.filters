@@ -67,7 +67,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Source\small.ico">
+    <ResourceCompile Include="Source\resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Source\icon1.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

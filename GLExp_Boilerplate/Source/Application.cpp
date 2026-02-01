@@ -116,7 +116,7 @@ ATOM Application::registerWindowClass(HINSTANCE hInstance) {
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName = NULL;
     wcex.lpszClassName = szWindowClass;
-    wcex.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+    wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ICON1));
 
     return RegisterClassExW(&wcex);
 }
@@ -235,73 +235,7 @@ BOOL Application::handleMessages() {
     return TRUE;
 }
 
-/*
-BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits) {
-    int nPfdNumber = 0;
-    HGLRC hContextGL3x = 0;
-
-    PIXELFORMATDESCRIPTOR pfd = {
-        sizeof(PIXELFORMATDESCRIPTOR),
-        1,
-        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-        PFD_TYPE_RGBA,
-        nColorBits,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        nDepthBits,
-        nStencilBits,
-        0,
-        PFD_MAIN_PLANE,
-        0, 0, 0, 0
-    };
-     
-    
-    // Choose a pixel format
-    if (0 == (nPfdNumber = ChoosePixelFormat(m_hDC, &pfd))) return FALSE;
-
-    // Set the pixel format for the device context
-    if (FALSE == SetPixelFormat(m_hDC, nPfdNumber, &pfd)) return FALSE;
-
-    // Describe it
-    if (0 == DescribePixelFormat(m_hDC, nPfdNumber, sizeof(PIXELFORMATDESCRIPTOR), &pfd)) return -4;
-    
-    // Create OpenGL context
-    if (NULL == (m_hGLRC = wglCreateContext(m_hDC))) return FALSE;
-
-    // Make it current
-    if (FALSE == wglMakeCurrent(m_hDC, m_hGLRC)) return FALSE;
-
-    if (GLEW_OK != glewInit()) {
-        return FALSE;
-    }
-              
-    int attribList[] = {
-        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-        WGL_CONTEXT_MINOR_VERSION_ARB, 0,
-        WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, WGL_CONTEXT_PROFILE_MASK_ARB,
-        0, 0
-    };
-        
-    // Create OpenGL >=3.x context
-    HGLRC hGLRC = NULL;
-    if (wglewIsSupported("WGL_ARB_create_context")) {
-        if (NULL != (hGLRC = wglCreateContextAttribsARB(m_hDC, 0, attribList))) {
-            wglMakeCurrent(NULL, NULL);
-            wglDeleteContext(m_hGLRC);
-
-            m_hGLRC = hGLRC;
-            if (FALSE == wglMakeCurrent(m_hDC, m_hGLRC)) return FALSE;
-        }
-    }
-    else {
-        return FALSE;
-    }
-       
-    return TRUE;
-}
-*/
-
-
-BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits) {
+BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits, BOOL isSync) {
    
     WNDCLASS wc = {};
     wc.lpfnWndProc = DefWindowProc;
@@ -445,6 +379,15 @@ BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits
 
     GLint samples = 0;
     glGetIntegerv(GL_SAMPLES, &samples);
+
+    if (wglewIsSupported("WGL_EXT_swap_control")) {
+        wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+        if (wglSwapIntervalEXT) wglSwapIntervalEXT(isSync);
+    }
+
+    const GLubyte* vendorStr = glGetString(GL_VENDOR);
+    const GLubyte* rendererStr = glGetString(GL_RENDERER);
+    const GLubyte* versionStr = glGetString(GL_VERSION);
 
     return TRUE;
 }

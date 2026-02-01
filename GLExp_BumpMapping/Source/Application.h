@@ -65,7 +65,7 @@ private:
 		return static_cast<double>(endTime.QuadPart - m_startTime.QuadPart) / m_timerFrequency.QuadPart;
 	}
 
-	BOOL initOpenGL(BYTE, BYTE, BYTE);
+	BOOL initOpenGL(BYTE, BYTE, BYTE, BOOL isSync = FALSE);
 	void destroyOpenGL();
 };
 

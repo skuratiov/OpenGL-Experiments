@@ -366,3 +366,13 @@ FodyWeavers.xsd
 !GLExp_Boilerplate/Source/
 !GLExp_Boilerplate/Source/Libs/
 !GLExp_Boilerplate/Source/Libs/**
+
+!GLExp_BumpMapping/
+!GLExp_BumpMapping/Source/
+!GLExp_BumpMapping/Source/Libs/
+!GLExp_BumpMapping/Source/Libs/**
+
+!GLExp_Freetype/
+!GLExp_Freetype/Source/
+!GLExp_Freetype/Source/Libs/
+!GLExp_Freetype/Source/Libs/**

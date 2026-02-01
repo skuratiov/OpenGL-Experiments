@@ -11,7 +11,7 @@
 
 #include <ostream>
 
-std::ofstream logFile("fontLog.txt");
+//std::ofstream logFile("fontLog.txt");
 
 //
 // Constructor / destructor
@@ -32,11 +32,7 @@ BOOL TextPainter::initFont() {
         return -1;
     }
 
-	//std::ifstream file(L"../Fonts/Roboto-Regular.ttf", std::ios::binary | std::ios::ate);
-
-	std::ifstream file(L"C:\\Windows\\Fonts\\arial.ttf", std::ios::binary | std::ios::ate);
-
-
+	std::ifstream file(L"../Fonts/Roboto-Regular.ttf", std::ios::binary | std::ios::ate);
 
 	if (!file) { FT_Done_FreeType(ft); return -2; }
 
@@ -131,7 +127,6 @@ void TextPainter::cleanup() {
 	m_textureArray = 0;
 }
 
-bool once = true;
 
 void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, glm::vec3 color) {
 	float currScale = scale;
@@ -154,14 +149,6 @@ void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, g
 
 		float w = float(currChar.Size.x) * currScale;
 		float h = float(currChar.Size.y) * currScale;
-
-		if (once) {
-			logFile << (char)c << ": Bearing.x = " << currChar.Bearing.x\
-				<< ", Advance = " << currChar.Advance\
-				<< ", scale = " << currScale\
-				<< ", step = " << currChar.Advance * currScale << std::endl;
-		
-		}
 	
 		positions[stringPos] = glm::vec2(xpos, ypos);
 		sizes[stringPos] = glm::vec2(w, h);
@@ -176,7 +163,7 @@ void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, g
 		
 		stringSize++;
 	}
-	once = false;
+
 	m_textShaderProgram.useProgram();
 	
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(1024), static_cast<float>(768), 0.0f);

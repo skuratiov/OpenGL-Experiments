@@ -27,8 +27,8 @@
 #include "Libs/glew/include/GL/glew.h"
 #include "Libs/glew/include/GL/wglew.h"
 
-#pragma comment (lib, "opengl32.lib")
-#pragma comment (lib, "gdi32.lib")
+#pragma comment(lib, "opengl32.lib")
+#pragma comment(lib, "gdi32.lib")
 
 
 #if defined(_WIN32) && !defined(_WIN64)

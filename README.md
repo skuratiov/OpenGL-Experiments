@@ -136,6 +136,7 @@ otherwise in individual folders.
 **Sergei Kuratiov**
 
 GitHub: https://github.com/skuratiov
+Linkedin: https://www.linkedin.com/in/sergei-kuratiov-32212010a/
 
 ------------------------------------------------------------------------
 

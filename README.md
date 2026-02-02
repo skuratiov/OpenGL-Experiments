@@ -42,8 +42,8 @@ To build and run the projects, you will need:
 -   Windows OS
 -   Microsoft Visual Studio (2019 / 2022 recommended)
 -   C++ Desktop Development workload
--   OpenGL 3.3+ compatible GPU and drivers
--   GLFW / GLEW / GLAD (included or configured per project)
+-   OpenGL 4.5+ compatible GPU and drivers
+-   GLEW / GLM (included or configured per project)
 -   FreeType (for text rendering demo)
 
 Basic knowledge of OpenGL and GLSL is recommended.
@@ -84,8 +84,8 @@ After opening the solution:
 
 The executable will be generated in:
 
-    /bin/Debug/
-    /bin/Release/
+    /bin/
+    /bin/
 
 inside the project folder.
 
@@ -136,6 +136,7 @@ otherwise in individual folders.
 **Sergei Kuratiov**
 
 GitHub: https://github.com/skuratiov
+
 Linkedin: https://www.linkedin.com/in/sergei-kuratiov-32212010a/
 
 ------------------------------------------------------------------------

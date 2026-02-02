@@ -127,11 +127,13 @@ void Renderer::drawFrame(double frameTime, float fps) {
     cube.draw();
     cube.unbind();
 
+    textPainter.beginTextLayer();
     textPainter.textOut((wchar_t*)L"The quick brown fox jumps over the lazy dog", 5, 733, 0.25, glm::vec3(1.0, 0.0f, 0.0f));
 
     wchar_t fpsStr[32];
     swprintf(fpsStr, 32, L"FPS: %.2f", fps);
     textPainter.textOut(fpsStr, 5, 5, 0.25, glm::vec3(1.0, 0.0f, 0.0f));
+    textPainter.endTextLayer();
 }
 
 //

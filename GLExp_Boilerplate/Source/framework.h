@@ -38,4 +38,29 @@
 // win64
 #if defined(_WIN32) && defined(_WIN64)
 #pragma comment(lib, "Source/Libs/glew/lib/Release/x64/glew32s.lib")
+
+#if defined(_DEBUG)
+#pragma comment(lib, "Source/Libs/freetype/lib/x86/Debug/freetype.lib")
+#elif
+#pragma comment(lib, "Source/Libs/freetype/lib/x86/Release/freetype.lib")
+#endif // DEBUG
+
 #endif
+
+// win64
+#if defined(_WIN32) && defined(_WIN64)
+#pragma comment(lib, "Source/Libs/glew/lib/Release/x64/glew32s.lib")
+
+#if defined(_DEBUG)
+#pragma comment(lib, "Source/Libs/freetype/lib/x64/Debug/freetype.lib")
+#else
+#pragma comment(lib, "Source/Libs/freetype/lib/x64/Release/freetype.lib")
+#endif
+
+#endif
+
+
+
+#include "Libs/glm/glm.hpp"
+#include "Libs/glm/gtc/matrix_transform.hpp"
+#include "Libs/glm/gtc/type_ptr.hpp"

@@ -13,12 +13,16 @@
 
 //std::ofstream logFile("fontLog.txt");
 
+
 //
 // Constructor / destructor
 //
 TextPainter::TextPainter() {
 	memset((void*)m_Chars, 0, sizeof(m_Chars));
 	m_textureArray = 0;
+
+	m_textColor = m_glyphPos = m_glyphSize = m_glyphLayer = m_glyphUV = 0;
+	m_uProjection = 0;
 }
 
 TextPainter::~TextPainter() {
@@ -71,12 +75,6 @@ BOOL TextPainter::initFont() {
 			//ch.Advance = (static_cast<unsigned int>(face->glyph->advance.x)) >> 6;
 			ch.Advance = face->glyph->metrics.horiAdvance >> 6;
 			
-			/*
-			log << (wchar_t)c << "\t" << "horiAdvance: " << face->glyph->metrics.horiAdvance\
-				<< ", advance.x: " << face->glyph->advance.x\
-				<< ", advance.x >> 6: " << (face->glyph->advance.x >> 6) << std::endl;
-				*/
-
 			glTexSubImage3D(
 				GL_TEXTURE_2D_ARRAY,
 				0, 0, 0, int(c),
@@ -114,6 +112,15 @@ BOOL TextPainter::initFont() {
 
 	m_textVertices.createBuffers(vertexData, sizeof(vertexData), nullptr, 0, VERTEX_DATA_FORMAT::FLOAT_VX2);
 	
+	m_uProjection = glGetUniformLocation(m_textShaderProgram.getProgramId(), "uProjection");
+
+	m_textColor = glGetUniformLocation(m_textShaderProgram.getProgramId(), "textColor");
+	m_glyphPos = glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphPos");
+	m_glyphSize = glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphSize");
+	m_glyphLayer = glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphLayer");
+	m_glyphUV = glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphUV");
+
+
 	return TRUE;
 }
 
@@ -127,16 +134,42 @@ void TextPainter::cleanup() {
 	m_textureArray = 0;
 }
 
+void TextPainter::beginTextLayer() {
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureArray);
+
+	m_textVertices.bind();
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	m_textShaderProgram.useProgram();
+
+	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(1024), static_cast<float>(768), 0.0f);
+	glUniformMatrix4fv(m_uProjection, 1, GL_FALSE, glm::value_ptr(projection));
+}
+
+void TextPainter::endTextLayer() {
+
+	m_textShaderProgram.freeProgram();
+
+	glDisable(GL_BLEND);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+	m_textVertices.unbind();
+}
 
 void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, glm::vec3 color) {
 	float currScale = scale;
 	float currentX = x, currentY = y;
 
-	glm::vec2 positions[255];
-	glm::vec2 sizes[255];
-	int layers[255];
-	glm::vec4 uvs[255];
-	
+	static glm::vec2 positions[255];
+	static glm::vec2 sizes[255];
+	static int layers[255];
+	static glm::vec4 uvs[255];
+
 	uint32_t stringPos = 0, stringSize = 0;
 	for (stringPos = 0; stringPos < 255; stringPos++) {
 		wchar_t c = lpszMessage[stringPos];
@@ -164,33 +197,12 @@ void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, g
 		stringSize++;
 	}
 
-	m_textShaderProgram.useProgram();
-	
-	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(1024), static_cast<float>(768), 0.0f);
-	glUniformMatrix4fv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "uProjection"), 1, GL_FALSE, glm::value_ptr(projection));
+	glUniform3f(m_textColor, color.x, color.y, color.z);
+	glUniform2fv(m_glyphPos, stringSize, &positions[0][0]);
+	glUniform2fv(m_glyphSize, stringSize, &sizes[0][0]);
+	glUniform1iv(m_glyphLayer, stringSize, layers);
+	glUniform4fv(m_glyphUV, stringSize, &uvs[0][0]);
 
-	glUniform3f(glGetUniformLocation(m_textShaderProgram.getProgramId(), "textColor"), color.x, color.y, color.z);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureArray);
-
-	m_textVertices.bind();
-
-	glUniform2fv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphPos"), stringPos, &positions[0][0]);
-	glUniform2fv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphSize"), stringPos, &sizes[0][0]);
-	glUniform1iv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphLayer"), stringPos, layers);
-	glUniform4fv(glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphUV"), stringPos, &uvs[0][0]);
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, stringSize);
-
-	glDisable(GL_BLEND);
-
-	m_textVertices.unbind();
+	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, stringSize); 
 }
 
-/*
-https://github.com/johnWRS/LearnOpenGLTextRenderingImprovement/blob/main/text_rendering.cpp
-*/

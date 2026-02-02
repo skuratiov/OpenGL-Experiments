@@ -12,7 +12,7 @@ public:
 	inline GLuint getProgramId() { return m_nProgramId; }
 
 	inline void useProgram() { glUseProgram(m_nProgramId); }
-
+	inline void freeProgram() { glUseProgram(0); }
 
 private:
 	GLuint m_nProgramId;

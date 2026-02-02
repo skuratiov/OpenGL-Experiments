@@ -15,6 +15,13 @@
 
 #define GLYPH_SIZE	256
 
+struct GlyphBlock
+{
+	glm::vec4  glyphRect[255];   // x,y,w,h
+	glm::vec4  glyphUV[255];     // u0,v0,u1,v1
+	glm::ivec4 glyphLayer[255];  // x = layer
+};
+
 //
 // Constructor / destructor
 //
@@ -24,6 +31,8 @@ TextPainter::TextPainter() {
 
 	m_textColor = m_glyphPos = m_glyphSize = m_glyphLayer = m_glyphUV = 0;
 	m_uProjection = 0;
+
+	m_uboGlyphs = 0;
 }
 
 TextPainter::~TextPainter() {
@@ -115,11 +124,13 @@ BOOL TextPainter::initFont() {
 	m_uProjection = glGetUniformLocation(m_textShaderProgram.getProgramId(), "uProjection");
 
 	m_textColor = glGetUniformLocation(m_textShaderProgram.getProgramId(), "textColor");
-	m_glyphPos = glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphPos");
-	m_glyphSize = glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphSize");
-	m_glyphLayer = glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphLayer");
-	m_glyphUV = glGetUniformLocation(m_textShaderProgram.getProgramId(), "glyphUV");
+	
+	glGenBuffers(1, &m_uboGlyphs);
+	glBindBuffer(GL_UNIFORM_BUFFER, m_uboGlyphs);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(GlyphBlock), nullptr, GL_DYNAMIC_DRAW);
 
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboGlyphs);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	return TRUE;
 }
@@ -135,18 +146,20 @@ void TextPainter::cleanup() {
 }
 
 void TextPainter::beginTextLayer() {
+	m_textShaderProgram.useProgram();  
+			
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboGlyphs);
+		
+	glm::mat4 projection = glm::ortho(0.0f, 1024.0f, 768.0f, 0.0f);
+	glUniformMatrix4fv(m_uProjection, 1, GL_FALSE, glm::value_ptr(projection));
+
+	m_textVertices.bind();
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureArray);
 
-	m_textVertices.bind();
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	m_textShaderProgram.useProgram();
-
-	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(1024), static_cast<float>(768), 0.0f);
-	glUniformMatrix4fv(m_uProjection, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
 void TextPainter::endTextLayer() {
@@ -164,12 +177,10 @@ void TextPainter::endTextLayer() {
 void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, glm::vec3 color) {
 	float currScale = scale;
 	float currentX = x, currentY = y;
-
-	static glm::vec2 positions[255];
-	static glm::vec2 sizes[255];
-	static int layers[255];
-	static glm::vec4 uvs[255];
 	
+	GlyphBlock gpuData;
+	memset(&gpuData, 0, sizeof(GlyphBlock));
+
 	uint32_t stringPos = 0, stringSize = 0;
 	for (stringPos = 0; stringPos < 255; stringPos++) {
 		wchar_t c = lpszMessage[stringPos];
@@ -183,28 +194,26 @@ void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, g
 		float w = float(currChar.Size.x) * currScale;
 		float h = float(currChar.Size.y) * currScale;
 	
-		positions[stringPos] = glm::vec2(xpos, ypos);
-		sizes[stringPos] = glm::vec2(w, h);
-		layers[stringPos] = int(c);
-
-		uvs[stringPos] = glm::vec4(
+		gpuData.glyphRect[stringPos] = glm::vec4(xpos, ypos, w, h);
+		gpuData.glyphUV[stringPos] = glm::vec4(
 			0.0, 0.0,
 			((float)(currChar.Size.x + currChar.Bearing.x) / ((float)GLYPH_SIZE)),
 			((float)(currChar.Size.y) / ((float)GLYPH_SIZE))); // full quad UV
 
+		gpuData.glyphLayer[stringPos] = glm::ivec4(int(c), 0, 0, 0);
+		
 		currentX += static_cast<float>(currChar.Advance) * currScale;
 		
 		stringSize++;
 	}
 
-	const int MAX_GLYPHS = 255;
+	glBindBuffer(GL_UNIFORM_BUFFER, m_uboGlyphs);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlyphBlock), &gpuData);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	glUniform3f(m_textColor, color.x, color.y, color.z);
-	glUniform2fv(m_glyphPos, MAX_GLYPHS, &positions[0][0]);
-	glUniform2fv(m_glyphSize, MAX_GLYPHS, &sizes[0][0]);
-	glUniform1iv(m_glyphLayer, MAX_GLYPHS, layers);
-	glUniform4fv(m_glyphUV, MAX_GLYPHS, &uvs[0][0]);
-	
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	glUniform3fv(m_textColor, 1, glm::value_ptr(color));
+
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, stringSize);
-
 }

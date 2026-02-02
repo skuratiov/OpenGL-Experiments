@@ -84,8 +84,7 @@ After opening the solution:
 
 The executable will be generated in:
 
-    /bin/
-    /bin/
+ {SolutionFolder}/bin/
 
 inside the project folder.
 

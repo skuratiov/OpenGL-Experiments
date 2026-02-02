@@ -376,3 +376,8 @@ FodyWeavers.xsd
 !GLExp_Freetype/Source/
 !GLExp_Freetype/Source/Libs/
 !GLExp_Freetype/Source/Libs/**
+
+!GLExp_IndirectRendering/
+!GLExp_IndirectRendering/Source/
+!GLExp_IndirectRendering/Source/Libs/
+!GLExp_IndirectRendering/Source/Libs/**

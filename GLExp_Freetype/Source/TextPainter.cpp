@@ -13,7 +13,7 @@
 
 //std::ofstream logFile("fontLog.txt");
 
-#define GLYPH_SIZE	256
+#define GLYPH_SIZE	64
 
 struct GlyphBlock
 {
@@ -64,7 +64,7 @@ BOOL TextPainter::initFont() {
 	FT_Face face;
 		
 	if (FT_New_Memory_Face(ft, buffer, fileSize, 0, &face) == 0)  {
-		FT_Set_Pixel_Sizes(face, 0, 128);
+		FT_Set_Pixel_Sizes(face, 0, GLYPH_SIZE);
 			
 		glGenTextures(1, &m_textureArray);
 		glActiveTexture(GL_TEXTURE0);
@@ -89,16 +89,28 @@ BOOL TextPainter::initFont() {
 			ch.Bearing = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
 			ch.Advance = face->glyph->metrics.horiAdvance >> 6;
 			
+			if (face->glyph->bitmap.width > GLYPH_SIZE) face->glyph->bitmap.width = GLYPH_SIZE;
+			if (face->glyph->bitmap.rows > GLYPH_SIZE) face->glyph->bitmap.rows = GLYPH_SIZE;
+
 			glTexSubImage3D(
 				GL_TEXTURE_2D_ARRAY,
 				0, 0, 0, int(c),
 				face->glyph->bitmap.width,
-				face->glyph->bitmap.rows, 1,
+				face->glyph->bitmap.rows,
+				1,
 				GL_RED,
 				GL_UNSIGNED_BYTE,
 				face->glyph->bitmap.buffer
 			);
 		}		
+	} else {
+		delete[] buffer;
+		buffer = nullptr;
+
+		FT_Done_Face(face);
+		FT_Done_FreeType(ft);
+
+		return -4;
 	}
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
@@ -110,7 +122,7 @@ BOOL TextPainter::initFont() {
 	buffer = nullptr;
 
 	if (TRUE != m_textShaderProgram.fromSrc("../Shaders/text.vert", "../Shaders/text.frag"))
-		return -4;
+		return -5;
 
 	GLfloat vertexData[] = {
 		0.0f,0.0f, // top-left
@@ -127,7 +139,7 @@ BOOL TextPainter::initFont() {
 	
 	glGenBuffers(1, &m_uboGlyphs);
 	glBindBuffer(GL_UNIFORM_BUFFER, m_uboGlyphs);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(GlyphBlock), nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(GlyphBlock), nullptr, GL_STREAM_DRAW);
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboGlyphs);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -145,16 +157,17 @@ void TextPainter::cleanup() {
 	m_textureArray = 0;
 }
 
+
 void TextPainter::beginTextLayer() {
 	m_textShaderProgram.useProgram();  
+
+	glBindBuffer(GL_UNIFORM_BUFFER, m_uboGlyphs);
 			
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboGlyphs);
-		
 	glm::mat4 projection = glm::ortho(0.0f, 1024.0f, 768.0f, 0.0f);
 	glUniformMatrix4fv(m_uProjection, 1, GL_FALSE, glm::value_ptr(projection));
-
+		
 	m_textVertices.bind();
-	
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureArray);
 
@@ -172,6 +185,8 @@ void TextPainter::endTextLayer() {
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
 	m_textVertices.unbind();
+
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, glm::vec3 color) {
@@ -206,13 +221,23 @@ void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, g
 		
 		stringSize++;
 	}
-
+	/*
 	glBindBuffer(GL_UNIFORM_BUFFER, m_uboGlyphs);
+	GlyphBlock* ptr = (GlyphBlock*)glMapBufferRange(
+		GL_UNIFORM_BUFFER,
+		0,
+		sizeof(GlyphBlock),
+		GL_MAP_WRITE_BIT |
+		GL_MAP_INVALIDATE_BUFFER_BIT
+	);
+	
+	if (!ptr) return;
+	memcpy(ptr, &gpuData, sizeof(GlyphBlock));
+
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	*/
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlyphBlock), &gpuData);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
+	
 	glUniform3fv(m_textColor, 1, glm::value_ptr(color));
 
 	glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, stringSize);

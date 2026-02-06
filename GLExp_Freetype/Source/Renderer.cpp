@@ -55,7 +55,7 @@ void Renderer::setupView(long width, long height) {
 }
 
 // Init scene
-void Renderer::initScene() {
+void Renderer::initScene() { 
     image.fromDDS("../Images/metal.dds", TEXFILTER_MODE::LINEAR_ANISO);
 
     shaderProgram.fromSrc("../Shaders/basic.vert", "../Shaders/basic.frag");
@@ -93,14 +93,14 @@ void Renderer::initScene() {
 
     cube.createBuffers(verts, sizeof(verts), indices, sizeof(indices), VERTEX_DATA_FORMAT::FLOAT_VX3UV2);
 
-
     textPainter.initFont();
 }
 
 // Draw frame
 void Renderer::drawFrame(double frameTime, float fps) {
+   
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    
     m_rotationAngle += (float) frameTime * 50.0f;
     m_rotationAngle = fmod(m_rotationAngle, 360.0f);
 
@@ -127,12 +127,13 @@ void Renderer::drawFrame(double frameTime, float fps) {
     cube.draw();
     cube.unbind();
 
+      
     textPainter.beginTextLayer();
     textPainter.textOut((wchar_t*)L"The quick brown fox jumps over the lazy dog", 5, 733, 0.25, glm::vec3(1.0, 0.0f, 0.0f));
 
     wchar_t fpsStr[32];
     swprintf(fpsStr, 32, L"FPS: %.2f", fps);
-    textPainter.textOut(fpsStr, 5, 5, 0.25, glm::vec3(1.0, 0.0f, 0.0f));
+    textPainter.textOut(fpsStr, 5, 5, 1, glm::vec3(1.0, 0.0f, 0.0f));
     textPainter.endTextLayer();
 }
 

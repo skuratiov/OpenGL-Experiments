@@ -308,7 +308,7 @@ BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits
     UINT numFormats = 0;
 
     if (wglewIsSupported("WGL_ARB_pixel_format") && wglewIsSupported("WGL_ARB_multisample")) {
-        const int samples_try[] = { 8, 4, 0 };
+        const int samples_try[] = { 8, 4, 2, 0 };
 
         for (int msaa : samples_try) {
             int attribs[] = {
@@ -332,6 +332,18 @@ BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits
             float fattribs[] = { 0,0 };
 
             if (wglChoosePixelFormatARB(m_hDC, attribs, fattribs, 1, &finalPixelFormat, &numFormats) && numFormats >= 1) {
+                
+                int queryAttribs[] = {
+                    WGL_DEPTH_BITS_ARB,
+                    WGL_STENCIL_BITS_ARB,
+                    WGL_SAMPLE_BUFFERS_ARB,
+                    WGL_SAMPLES_ARB,
+                    WGL_COLOR_BITS_ARB
+                };
+
+                int values[5];
+                wglGetPixelFormatAttribivARB(m_hDC, finalPixelFormat, 0, 5, queryAttribs, values);
+                
                 DescribePixelFormat(m_hDC, finalPixelFormat, sizeof(finalPFD), &finalPFD);
                 break;
             }

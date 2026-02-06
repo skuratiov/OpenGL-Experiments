@@ -15,6 +15,8 @@
 
 #define GLYPH_SIZE	64
 
+void *m_uboPtr = nullptr;
+
 struct GlyphBlock
 {
 	glm::vec4  glyphRect[255];   // x,y,w,h
@@ -142,6 +144,7 @@ BOOL TextPainter::initFont() {
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(GlyphBlock), nullptr, GL_STREAM_DRAW);
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboGlyphs);
+		
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	return TRUE;
@@ -221,21 +224,7 @@ void TextPainter::textOut(wchar_t* lpszMessage, float x, float y, float scale, g
 		
 		stringSize++;
 	}
-	/*
-	glBindBuffer(GL_UNIFORM_BUFFER, m_uboGlyphs);
-	GlyphBlock* ptr = (GlyphBlock*)glMapBufferRange(
-		GL_UNIFORM_BUFFER,
-		0,
-		sizeof(GlyphBlock),
-		GL_MAP_WRITE_BIT |
-		GL_MAP_INVALIDATE_BUFFER_BIT
-	);
-	
-	if (!ptr) return;
-	memcpy(ptr, &gpuData, sizeof(GlyphBlock));
-
-	glUnmapBuffer(GL_UNIFORM_BUFFER);
-	*/
+		
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlyphBlock), &gpuData);
 	
 	glUniform3fv(m_textColor, 1, glm::value_ptr(color));

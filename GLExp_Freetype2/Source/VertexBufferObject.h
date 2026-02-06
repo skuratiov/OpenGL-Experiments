@@ -40,7 +40,7 @@ public:
 		}
 	}
 
-	inline void update(const void* data, size_t amount, GLsizei size) {
+	inline void update(const void* data, GLsizei amount, GLsizei size) {
 		if (!m_isDynamic) return; 
 
 		m_nVertexCount = amount;

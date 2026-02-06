@@ -76,6 +76,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>.\Bin\</OutDir>
+ <IncludePath>D:\DEV-PERSONAL\OpenGL_Experiments\GLExp_Freetype2\Source\Libs\glm;D:\DEV-PERSONAL\OpenGL_Experiments\GLExp_Freetype2\Source\Libs\glew\include\GL;D:\DEV-PERSONAL\OpenGL_Experiments\GLExp_Freetype2\Source\Libs;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

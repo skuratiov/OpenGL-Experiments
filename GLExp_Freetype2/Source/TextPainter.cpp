@@ -13,8 +13,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-static const int ATLAS_W = 512.0;
-static const int ATLAS_H = 512.0;
+static const int ATLAS_W = 512;
+static const int ATLAS_H = 512;
 
 struct TextVertex {
     float x, y;
@@ -148,14 +148,14 @@ BOOL TextPainter::initFont() {
         // UV
         Character& ch = m_Chars[c];
         
-        ch.u0 = (float)pos[c].x / ATLAS_W;
+        ch.u0 = (float)pos[c].x / (float)ATLAS_W;
        // ch.v0 = (float)pos[c].y / ATLAS_H;
-        ch.v0 = (float)(pos[c].y + temp[c].h) / ATLAS_H;   
+        ch.v0 = (float)(pos[c].y + temp[c].h) / (float)ATLAS_H;
         
 
-        ch.u1 = (float)(pos[c].x + temp[c].w) / ATLAS_W;
+        ch.u1 = (float)(pos[c].x + temp[c].w) / (float)ATLAS_W;
       //  ch.v1 = (float)(pos[c].y + temp[c].h) / ATLAS_H;
-        ch.v1 = (float)pos[c].y / ATLAS_H;
+        ch.v1 = (float)pos[c].y / (float)ATLAS_H;
     }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

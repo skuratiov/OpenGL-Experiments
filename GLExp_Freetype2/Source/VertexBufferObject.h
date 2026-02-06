@@ -12,7 +12,7 @@ enum VERTEX_DATA_FORMAT {
 };
 
 class VertexBufferObject {
-private:
+protected:
 	GLuint m_nVertexArrayId,
 		   m_nVertexBufferObject,
 		   m_nIndexBufferObject;

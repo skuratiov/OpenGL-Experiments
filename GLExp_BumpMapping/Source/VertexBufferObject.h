@@ -3,6 +3,7 @@
 
 enum VERTEX_DATA_FORMAT {
 	FLOAT_VX2,
+	FLOAT_VX2UV2,
 	FLOAT_VX3,
 	FLOAT_VX3UV2,
 	FLOAT_VX3CL4,
@@ -11,19 +12,19 @@ enum VERTEX_DATA_FORMAT {
 };
 
 class VertexBufferObject {
-private:
+protected:
 	GLuint m_nVertexArrayId,
 		   m_nVertexBufferObject,
 		   m_nIndexBufferObject;
 
 	GLsizei m_nVertexCount, m_nIndexCount;
-	bool m_hasIndex;
+	bool m_hasIndex, m_isDynamic;
 
 public:
 	VertexBufferObject();
 	~VertexBufferObject();
 
-	void createBuffers(void *, GLsizei, void*, GLsizei, uint16_t );
+	void createBuffers(void *, GLsizei, void*, GLsizei, uint16_t, bool isDynamic = false);
 	void deleteBuffers();
 
 	inline void draw() const {
@@ -39,13 +40,22 @@ public:
 		}
 	}
 
-	inline void bind() { 
-		glBindVertexArray(m_nVertexArrayId); 
+	inline void update(const void* data, GLsizei amount, GLsizei size) {
+		if (!m_isDynamic) return; 
+
+		m_nVertexCount = amount;
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_nVertexBufferObject);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, size * amount, data);
+	}
+
+	inline void bind() {
+		glBindVertexArray(m_nVertexArrayId);
 		if (m_hasIndex) { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_nIndexBufferObject); }
 		glBindBuffer(GL_ARRAY_BUFFER, m_nVertexBufferObject);
 	}
-	
-	inline void unbind() { 
+
+	inline void unbind() {
 		if (m_hasIndex) { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);

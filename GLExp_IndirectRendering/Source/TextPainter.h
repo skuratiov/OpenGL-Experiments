@@ -28,6 +28,8 @@ private:
 	GLuint m_textColor, m_glyphPos, m_glyphSize, 
 		m_glyphLayer, m_glyphUV, m_uProjection;
 
+	GLuint m_uboGlyphs;
+
 	ShaderProgram m_textShaderProgram;
 	VertexBufferObject m_textVertices;
 };

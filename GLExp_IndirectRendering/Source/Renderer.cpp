@@ -133,7 +133,7 @@ void Renderer::initScene() {
 }
 
 // Draw frame
-void Renderer::drawFrame(double frameTime, float fps) {
+void Renderer::drawFrame(double frameTime, float fps) { 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     m_rotationAngle += (float)frameTime * 50.0f;
@@ -145,8 +145,7 @@ void Renderer::drawFrame(double frameTime, float fps) {
     m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(1.0f, 0.0f, 0.0f));
     m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(0.0f, 1.0f, 0.0f));
     m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
-    
-    
+        
     glActiveTexture(GL_TEXTURE0);
     image.bindTexture();
 
@@ -169,13 +168,12 @@ void Renderer::drawFrame(double frameTime, float fps) {
     image.unbindTexture();
 
     glActiveTexture(GL_TEXTURE1);
-    normalmap.unbindTexture();
-
-    
+    normalmap.unbindTexture(); 
+  
     wchar_t fpsStr[32];
     swprintf(fpsStr, 32, L"FPS: %.2f", fps);
     textPainter.beginTextLayer();
-    textPainter.textOut(fpsStr, 5, 5, 0.25, glm::vec3(1.0, 0.0f, 0.0f));
+    textPainter.textOut(fpsStr, 5, 5, 1, glm::vec3(1.0, 0.0f, 0.0f));
     textPainter.endTextLayer();
 }
 

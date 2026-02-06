@@ -8,6 +8,7 @@ VertexBufferObject::VertexBufferObject() {
 	m_nVertexArrayId = m_nVertexBufferObject = m_nIndexBufferObject = 0;
 	m_nVertexCount = m_nIndexCount = 0;
 	m_hasIndex = false;
+	m_isDynamic = false;
 }
 
 VertexBufferObject::~VertexBufferObject() {
@@ -15,14 +16,17 @@ VertexBufferObject::~VertexBufferObject() {
 }
 
 void VertexBufferObject::createBuffers(void *vertexData, GLsizei vertexDataSize,
-	void *indexData, GLsizei indexDataSize, uint16_t format) {
+	void *indexData, GLsizei indexDataSize, uint16_t format, bool isDynamic) {
 	glGenVertexArrays(1, &m_nVertexArrayId);
-	glGenBuffers(1, &m_nVertexBufferObject);
-
 	glBindVertexArray(m_nVertexArrayId);
+	
+	GLenum usageType = isDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 
+	glGenBuffers(1, &m_nVertexBufferObject);
 	glBindBuffer(GL_ARRAY_BUFFER, m_nVertexBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, vertexDataSize, vertexData, GL_STATIC_DRAW);
+
+	glBufferData(GL_ARRAY_BUFFER, vertexDataSize, isDynamic ? nullptr : vertexData, usageType);
+	m_isDynamic = isDynamic;
 
 	GLsizei stride = 0;
 	m_hasIndex = false;
@@ -33,6 +37,13 @@ void VertexBufferObject::createBuffers(void *vertexData, GLsizei vertexDataSize,
 		stride = 2 * sizeof(float);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, (void*)0);
+		break;
+	case VERTEX_DATA_FORMAT::FLOAT_VX2UV2:
+		stride = 4 * sizeof(float);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)(2 * sizeof(float)));
 		break;
 	case VERTEX_DATA_FORMAT::FLOAT_VX3:
 		stride = 3 * sizeof(float);
@@ -82,18 +93,14 @@ void VertexBufferObject::createBuffers(void *vertexData, GLsizei vertexDataSize,
 		break;
 	}
 
+	m_hasIndex = false;
 	if (indexData) {
 		m_hasIndex = true;
 
 		glGenBuffers(1, &m_nIndexBufferObject);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_nIndexBufferObject);
-		glBufferData(
-			GL_ELEMENT_ARRAY_BUFFER,
-			indexDataSize,
-			indexData,
-			GL_STATIC_DRAW
-		);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexDataSize, indexData, usageType);
 
 		m_nIndexCount = (GLsizei) (indexDataSize / sizeof(uint32_t));
 	}

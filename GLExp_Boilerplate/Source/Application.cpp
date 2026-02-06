@@ -133,6 +133,7 @@ BOOL Application::initInstance(HINSTANCE hInstance, int nCmdShow) {
 
     m_hWnd = CreateWindowW(szWindowClass, szTitle, WS_DLGFRAME | WS_SYSMENU,
         CW_USEDEFAULT, 0, nWinWidth, nWinHeight, nullptr, nullptr, hInstance, nullptr);
+ 
 
     if (!m_hWnd) {
         return FALSE;

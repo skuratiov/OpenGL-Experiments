@@ -21,6 +21,11 @@ public:
 
 	void setWindowTitle(LPCWSTR szTitle) const;
 
+	inline void activeRawInput(bool isActive) {
+		if (isActive) { initRawInput(); }
+		else { destroyRawInput(); }
+	}
+
 protected:
 	virtual BOOL Init(LPWSTR ) = 0;
 	virtual void Run(double , float ) = 0;
@@ -67,6 +72,9 @@ private:
 
 	BOOL initOpenGL(BYTE, BYTE, BYTE, BOOL isSync = FALSE);
 	void destroyOpenGL();
+
+	BOOL initRawInput();
+	void destroyRawInput();
 };
 
 //

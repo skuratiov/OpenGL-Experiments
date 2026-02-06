@@ -47,7 +47,8 @@ Application::~Application() {
 //
 BOOL Application::initApplicationBase(LPWSTR lpCmdLine, HINSTANCE hInstance, int nCmdShow) {
 
-    if (!registerWindowClass(hInstance) || !initInstance(hInstance, nCmdShow) || !initOpenGL(32, 24, 8)) {
+    if (!registerWindowClass(hInstance) || !initInstance(hInstance, nCmdShow) || 
+        !initOpenGL(32, 24, 8) || !initRawInput()) {
         return FALSE;
     }
 
@@ -65,10 +66,11 @@ void Application::runApplicationBase() {
     while (handleMessages()) {
 
         startFrameTimer();
-    
-        Run(frameTime, m_currentFPS);
-
-        if (m_hDC) SwapBuffers(m_hDC);
+            
+        if (m_hDC && m_hGLRC) {
+            Run(frameTime, m_currentFPS);
+            SwapBuffers(m_hDC);
+        }
 
         frameTime = getFrameTime();
 
@@ -88,6 +90,8 @@ void Application::runApplicationBase() {
 //
 void Application::cleanupApplicationBase() {
     this->Done();
+
+    destroyRawInput();
 
     destroyOpenGL();
 
@@ -132,7 +136,7 @@ BOOL Application::initInstance(HINSTANCE hInstance, int nCmdShow) {
         nWinHeight = m_ViewportDims.bottom + (2 * GetSystemMetrics(SM_CYSIZEFRAME)) + GetSystemMetrics(SM_CYCAPTION);
 
     m_hWnd = CreateWindowW(szWindowClass, szTitle, WS_DLGFRAME | WS_SYSMENU,
-        CW_USEDEFAULT, 0, nWinWidth, nWinHeight, nullptr, nullptr, hInstance, nullptr);
+        CW_USEDEFAULT, 0, nWinWidth, nWinHeight, nullptr, nullptr, hInstance, this);
 
     if (!m_hWnd) {
         return FALSE;
@@ -165,54 +169,86 @@ void Application::destroyInstance() {
 // WndProc
 LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
+    Application* pApp = (Application*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+
     switch (message) {
-    case WM_KEYDOWN:
-        switch (wParam) {
-        case VK_UP: {
-            break;
-        }
-        case VK_DOWN: {
-            break;
-        }
-        case VK_LEFT: {
-            break;
-        }
-        case VK_RIGHT: {
-            break;
-        }
-        default: {
-            break;
-        }
-        }
-        break;
 
-    case WM_KEYUP:
-        switch (wParam) {
-        case VK_UP: {
-            break;
+        case WM_NCCREATE: {
+            auto* cs = (CREATESTRUCT*)lParam;
+            pApp = (Application*)cs->lpCreateParams;
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pApp);
+            return TRUE;
         }
-        case VK_DOWN: {
-            break;
-        }
-        case VK_LEFT: {
-            break;
-        }
-        case VK_RIGHT: {
-            break;
-        }
-        default: {
-            break;
-        }
-        }
-        break;
 
-    case WM_CLOSE:
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
+        case WM_ACTIVATE: {
+            if (!pApp) return DefWindowProc(hWnd, message, wParam, lParam);
+            pApp->activeRawInput(LOWORD(wParam) != WA_INACTIVE);
+            return TRUE;
+        }
 
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        case WM_INPUT: {
+            RAWINPUT input;
+            UINT size = sizeof(RAWINPUT);
+            if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &input, &size, sizeof(RAWINPUTHEADER)) == size) {
+                if (input.header.dwType == RIM_TYPEMOUSE) {
+                    LONG dx = input.data.mouse.lLastX;
+                    LONG dy = input.data.mouse.lLastY;
+
+                    // delta
+                    //pApp->accumMouseDelta(dx, dy);
+                }
+            }
+
+            return 0;
+        }
+
+        case WM_KEYDOWN:
+            switch (wParam) {
+                case VK_UP: {
+                    break;
+                }
+                case VK_DOWN: {
+                    break;
+                }
+                case VK_LEFT: {
+                    break;
+                }
+                case VK_RIGHT: {
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+            break;
+
+        case WM_KEYUP:
+            switch (wParam) {
+                case VK_UP: {
+                    break;
+                }
+                case VK_DOWN: {
+                    break;
+                }
+                case VK_LEFT: {
+                    break;
+                }
+                case VK_RIGHT: {
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+            break;
+
+        case WM_CLOSE:
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            break;
+
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
     }
 
     return 0;
@@ -413,4 +449,43 @@ void Application::setWindowTitle(LPCWSTR szTitle) const {
     wcscat_s(buffer, szTitle);
 
     SetWindowTextW(m_hWnd, buffer);
+}
+
+BOOL Application::initRawInput() {
+    RAWINPUTDEVICE rid = {};
+
+    rid.usUsagePage = 0x01; // Generic Desktop
+    rid.usUsage = 0x02;     // Mouse
+    rid.dwFlags = RIDEV_INPUTSINK | RIDEV_NOLEGACY;
+
+    rid.hwndTarget = m_hWnd;
+
+    if (!RegisterRawInputDevices(&rid, 1, sizeof(rid))) {
+        DWORD err = GetLastError();
+
+#ifdef _DEBUG
+        wchar_t buf[256];
+        swprintf(buf, 256, L"RegisterRawInputDevices failed: %lu", err);
+        MessageBox(m_hWnd, buf, L"RawInput Error", MB_ICONERROR);
+#endif
+        return FALSE;
+    }
+
+    ShowCursor(FALSE);
+
+    return TRUE;
+}
+
+void Application::destroyRawInput() {
+    RAWINPUTDEVICE rid = {};
+
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02;
+
+    rid.dwFlags = RIDEV_REMOVE;
+    rid.hwndTarget = NULL;
+
+    RegisterRawInputDevices(&rid, 1, sizeof(rid));
+
+    ShowCursor(TRUE);
 }

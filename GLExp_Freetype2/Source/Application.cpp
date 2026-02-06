@@ -106,7 +106,7 @@ ATOM Application::registerWindowClass(HINSTANCE hInstance) {
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wcex.lpfnWndProc = WndProc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
@@ -137,7 +137,6 @@ BOOL Application::initInstance(HINSTANCE hInstance, int nCmdShow) {
     if (!m_hWnd) {
         return FALSE;
     }
-
     ShowWindow(m_hWnd, nCmdShow);
     UpdateWindow(m_hWnd);
 
@@ -209,7 +208,10 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
     case WM_CLOSE:
     case WM_DESTROY:
         PostQuitMessage(0);
-        break;
+        break;  
+
+    case WM_ERASEBKGND:
+        return 1;
 
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);

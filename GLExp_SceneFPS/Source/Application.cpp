@@ -37,6 +37,8 @@ Application::Application() {
 
     m_frameCounter = 0;
     m_timeAccumulator = 0.0f;
+
+    m_nMouseDX = m_nMouseDY = 0;
 }
 
 Application::~Application() {
@@ -113,7 +115,7 @@ ATOM Application::registerWindowClass(HINSTANCE hInstance) {
     wcex.style = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc = WndProc;
     wcex.cbClsExtra = 0;
-    wcex.cbWndExtra = 0;
+    wcex.cbWndExtra = sizeof(LONG_PTR);
     wcex.hInstance = hInstance;
     wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -177,7 +179,7 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
             auto* cs = (CREATESTRUCT*)lParam;
             pApp = (Application*)cs->lpCreateParams;
             SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pApp);
-            return TRUE;
+            return DefWindowProc(hWnd, message, wParam, lParam);
         }
 
         case WM_ACTIVATE: {
@@ -194,8 +196,7 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
                     LONG dx = input.data.mouse.lLastX;
                     LONG dy = input.data.mouse.lLastY;
 
-                    // delta
-                    //pApp->accumMouseDelta(dx, dy);
+                    if (pApp) pApp->accumMouseDelta(dx, dy);
                 }
             }
 
@@ -203,43 +204,11 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
         }
 
         case WM_KEYDOWN:
-            switch (wParam) {
-                case VK_UP: {
-                    break;
-                }
-                case VK_DOWN: {
-                    break;
-                }
-                case VK_LEFT: {
-                    break;
-                }
-                case VK_RIGHT: {
-                    break;
-                }
-                default: {
-                    break;
-                }
-            }
+            if (pApp) pApp->onKeyDown((int)wParam);
             break;
 
         case WM_KEYUP:
-            switch (wParam) {
-                case VK_UP: {
-                    break;
-                }
-                case VK_DOWN: {
-                    break;
-                }
-                case VK_LEFT: {
-                    break;
-                }
-                case VK_RIGHT: {
-                    break;
-                }
-                default: {
-                    break;
-                }
-            }
+            if (pApp) pApp->onKeyUp((int)wParam);
             break;
 
         case WM_CLOSE:
@@ -451,7 +420,23 @@ void Application::setWindowTitle(LPCWSTR szTitle) const {
     SetWindowTextW(m_hWnd, buffer);
 }
 
+void Application::centerCursor() {
+    RECT rc;
+    GetClientRect(m_hWnd, &rc);
+
+    POINT pt;
+    pt.x = (rc.right - rc.left) / 2;
+    pt.y = (rc.bottom - rc.top) / 2;
+
+    ClientToScreen(m_hWnd, &pt);
+
+    SetCursorPos(pt.x, pt.y);
+}
+
 BOOL Application::initRawInput() {
+
+    centerCursor();
+
     RAWINPUTDEVICE rid = {};
 
     rid.usUsagePage = 0x01; // Generic Desktop
@@ -471,7 +456,9 @@ BOOL Application::initRawInput() {
         return FALSE;
     }
 
-    ShowCursor(FALSE);
+    for (int i = 0; i < 10; i++) {
+        if (ShowCursor(FALSE) < 0) break;
+    }
 
     return TRUE;
 }
@@ -487,5 +474,18 @@ void Application::destroyRawInput() {
 
     RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
-    ShowCursor(TRUE);
+    for (int i = 0; i < 10; i++) {
+        if (ShowCursor(true) >= 0) break;
+    }
 }
+
+void Application::accumMouseDelta(LONG dx, LONG dy) {
+    m_nMouseDX += dx;
+    m_nMouseDY += dy;
+}
+
+void Application::consumeMouseDelta(LONG &dx, LONG &dy) {
+    dx = m_nMouseDX;
+    dy = m_nMouseDY;
+    m_nMouseDX = m_nMouseDY = 0;
+ }

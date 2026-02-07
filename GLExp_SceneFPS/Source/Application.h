@@ -26,6 +26,12 @@ public:
 		else { destroyRawInput(); }
 	}
 
+	virtual void onKeyDown(int) = 0;
+	virtual void onKeyUp(int) = 0;
+
+	void accumMouseDelta(LONG, LONG);
+	void consumeMouseDelta(LONG&, LONG&);
+
 protected:
 	virtual BOOL Init(LPWSTR ) = 0;
 	virtual void Run(double , float ) = 0;
@@ -41,6 +47,8 @@ private:
 	int m_frameCounter = 0;
 	double m_timeAccumulator = 0.0;
 	float m_currentFPS = 0.0f;
+
+	LONG m_nMouseDX, m_nMouseDY;
 
 	LARGE_INTEGER m_startTime, m_timerFrequency;
 
@@ -73,6 +81,7 @@ private:
 	BOOL initOpenGL(BYTE, BYTE, BYTE, BOOL isSync = FALSE);
 	void destroyOpenGL();
 
+	void centerCursor();
 	BOOL initRawInput();
 	void destroyRawInput();
 };

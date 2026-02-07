@@ -45,6 +45,14 @@ void Demo::Done() {
 	g_pRenderer->cleanup();
 }
 
+void Demo::onMouseDelta(LONG dx, LONG dy) {
+}
+
+void Demo::onKeyDown(int key) {
+}
+
+void Demo::onKeyUp(int key) {
+}
 
 //
 // Define entry point

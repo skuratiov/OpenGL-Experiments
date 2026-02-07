@@ -33,8 +33,8 @@ public:
 	void consumeMouseDelta(LONG&, LONG&);
 
 protected:
-	virtual BOOL Init(LPWSTR ) = 0;
-	virtual void Run(double , float ) = 0;
+	virtual BOOL Init(LPWSTR) = 0;
+	virtual void Run(double, float) = 0;
 	virtual void Done() = 0;
 
 private:

@@ -22,8 +22,7 @@ public:
 	BOOL Init(LPWSTR );
 	void Run(double, float);
 	void Done();
-		
-	void onMouseDelta(LONG, LONG);
+
 	void onKeyDown(int);
 	void onKeyUp(int);
 

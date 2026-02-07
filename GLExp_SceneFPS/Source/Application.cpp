@@ -167,7 +167,6 @@ void Application::destroyInstance() {
     }
 }
 
-
 // WndProc
 LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
@@ -179,12 +178,17 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
             auto* cs = (CREATESTRUCT*)lParam;
             pApp = (Application*)cs->lpCreateParams;
             SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pApp);
-            return DefWindowProc(hWnd, message, wParam, lParam);
+            break;
         }
 
         case WM_ACTIVATE: {
-            if (!pApp) return DefWindowProc(hWnd, message, wParam, lParam);
+            if (!pApp) break;
             pApp->activeRawInput(LOWORD(wParam) != WA_INACTIVE);
+            break;
+        }
+
+        case WM_SETCURSOR: {
+            SetCursor(NULL);
             return TRUE;
         }
 
@@ -203,24 +207,23 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
             return 0;
         }
 
-        case WM_KEYDOWN:
+        case WM_KEYDOWN: {
             if (pApp) pApp->onKeyDown((int)wParam);
-            break;
+            return 0;
+        }
 
-        case WM_KEYUP:
+        case WM_KEYUP: {
             if (pApp) pApp->onKeyUp((int)wParam);
-            break;
+            return 0;
+        }
 
         case WM_CLOSE:
         case WM_DESTROY:
             PostQuitMessage(0);
             break;
-
-        default:
-            return DefWindowProc(hWnd, message, wParam, lParam);
     }
 
-    return 0;
+    return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 // handleMessages

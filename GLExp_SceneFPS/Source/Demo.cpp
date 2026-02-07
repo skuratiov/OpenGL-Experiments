@@ -45,9 +45,6 @@ void Demo::Done() {
 	g_pRenderer->cleanup();
 }
 
-void Demo::onMouseDelta(LONG dx, LONG dy) {
-}
-
 void Demo::onKeyDown(int key) {
 }
 

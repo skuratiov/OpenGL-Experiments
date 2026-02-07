@@ -65,10 +65,11 @@ void Application::runApplicationBase() {
     while (handleMessages()) {
 
         startFrameTimer();
-    
-        Run(frameTime, m_currentFPS);
-
-        if (m_hDC) SwapBuffers(m_hDC);
+                
+        if (m_hDC && m_hGLRC) {
+            Run(frameTime, m_currentFPS);
+            SwapBuffers(m_hDC);
+        }
 
         frameTime = getFrameTime();
 
@@ -92,7 +93,7 @@ void Application::cleanupApplicationBase() {
     destroyOpenGL();
 
     unregisterWindowClass();
-    
+
     destroyInstance();
 }
 
@@ -109,7 +110,7 @@ ATOM Application::registerWindowClass(HINSTANCE hInstance) {
     wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wcex.lpfnWndProc = WndProc;
     wcex.cbClsExtra = 0;
-    wcex.cbWndExtra = 0;
+    wcex.cbWndExtra = sizeof(LONG_PTR);
     wcex.hInstance = hInstance;
     wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -132,7 +133,8 @@ BOOL Application::initInstance(HINSTANCE hInstance, int nCmdShow) {
         nWinHeight = m_ViewportDims.bottom + (2 * GetSystemMetrics(SM_CYSIZEFRAME)) + GetSystemMetrics(SM_CYCAPTION);
 
     m_hWnd = CreateWindowW(szWindowClass, szTitle, WS_DLGFRAME | WS_SYSMENU,
-        CW_USEDEFAULT, 0, nWinWidth, nWinHeight, nullptr, nullptr, hInstance, nullptr);
+        CW_USEDEFAULT, 0, nWinWidth, nWinHeight, nullptr, nullptr, hInstance, this);
+ 
 
     if (!m_hWnd) {
         return FALSE;
@@ -163,61 +165,38 @@ void Application::destroyInstance() {
 
 // WndProc
 LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    
+    Application* pApp = (Application*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
     switch (message) {
-    case WM_KEYDOWN:
-        switch (wParam) {
-        case VK_UP: {
+        case WM_NCCREATE: {
+            auto* cs = (CREATESTRUCT*)lParam;
+            pApp = (Application*)cs->lpCreateParams;
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pApp);
             break;
         }
-        case VK_DOWN: {
-            break;
-        }
-        case VK_LEFT: {
-            break;
-        }
-        case VK_RIGHT: {
-            break;
-        }
-        default: {
-            break;
-        }
-        }
-        break;
 
-    case WM_KEYUP:
-        switch (wParam) {
-        case VK_UP: {
+        case WM_KEYDOWN: {
             break;
         }
-        case VK_DOWN: {
+ 
+        case WM_KEYUP: {
             break;
         }
-        case VK_LEFT: {
-            break;
-        }
-        case VK_RIGHT: {
-            break;
-        }
-        default: {
-            break;
-        }
-        }
-        break;
 
-    case WM_CLOSE:
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;  
+        case WM_CLOSE:
+        case WM_DESTROY: {
+            PostQuitMessage(0);
+            break;
+        }
 
-    case WM_ERASEBKGND:
-        return 1;
-
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        case WM_ERASEBKGND: {
+            return 1;
+        }
+            
     }
 
-    return 0;
+    return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 // handleMessages
@@ -238,7 +217,7 @@ BOOL Application::handleMessages() {
 }
 
 BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits, BOOL isSync) {
-   
+
     WNDCLASS wc = {};
     wc.lpfnWndProc = DefWindowProc;
     wc.hInstance = GetModuleHandle(NULL);
@@ -257,7 +236,7 @@ BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits
         return FALSE;
     }
 
-    PIXELFORMATDESCRIPTOR dummyPFD = { 
+    PIXELFORMATDESCRIPTOR dummyPFD = {
         sizeof(PIXELFORMATDESCRIPTOR),
         1,
         PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
@@ -317,7 +296,7 @@ BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits
                 WGL_DRAW_TO_WINDOW_ARB,     GL_TRUE,
                 WGL_SUPPORT_OPENGL_ARB,     GL_TRUE,
                 WGL_DOUBLE_BUFFER_ARB,      GL_TRUE,
-                WGL_ACCELERATION_ARB,       WGL_FULL_ACCELERATION_ARB,  
+                WGL_ACCELERATION_ARB,       WGL_FULL_ACCELERATION_ARB,
                 WGL_PIXEL_TYPE_ARB,         WGL_TYPE_RGBA_ARB,
                 WGL_COLOR_BITS_ARB,         nColorBits,
                 WGL_RED_BITS_ARB,           8,
@@ -358,7 +337,7 @@ BOOL Application::initOpenGL(BYTE nColorBits, BYTE nDepthBits, BYTE nStencilBits
     if (wglewIsSupported("WGL_ARB_create_context")) {
         int ctxAttrs[] = {
             WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-            WGL_CONTEXT_MINOR_VERSION_ARB, 5,  
+            WGL_CONTEXT_MINOR_VERSION_ARB, 5,
             WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
             WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
             0

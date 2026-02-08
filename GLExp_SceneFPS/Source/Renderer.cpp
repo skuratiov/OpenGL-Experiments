@@ -52,7 +52,9 @@ void Renderer::setupView(long width, long height) {
 
 // Init scene
 void Renderer::initScene() {
-      
+    
+    Scene* pScene = Scene::getInstance();
+	pScene->fromOBJ("../Scene/conference.obj");
 
     textPainter.initFont();
 }

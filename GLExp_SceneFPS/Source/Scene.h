@@ -3,6 +3,7 @@
 #define MAX_MESHES	256
 
 struct Material {
+	char name[64] = { 0 };
 	glm::vec3 diffuseColor = glm::vec3(1.0f);   
 	glm::vec3 specularColor = glm::vec3(1.0f);  
 	float shininess = 32.0f;                    
@@ -14,6 +15,9 @@ struct Material {
 struct Mesh {
 	VertexBufferObjectIndirect* vbo = nullptr;
 	Material* material = nullptr;
+
+	glm::vec3 bboxMin = glm::vec3(0.0f);
+	glm::vec3 bboxMax = glm::vec3(0.0f);
 };
 
 class Scene {
@@ -39,8 +43,14 @@ private:
 
 	BOOL parseOBJ(uint8_t* buffer, size_t size);
 
+	void calculateNormals(glm::vec3* vertices, uint32_t* indices, size_t vertexCount,
+		size_t indexCount, glm::vec3* normals);
+
 	void calculateTangents(glm::vec3* vertices, glm::vec2* uvs, glm::vec3* normals,
 		uint32_t* indices, size_t vertexCount, size_t indexCount,
 		glm::vec3* tangents);
+
+	void calculateBoundingBox(glm::vec3* vertices, size_t vertexCount,
+		glm::vec3& outMin, glm::vec3& outMax);
 };
 

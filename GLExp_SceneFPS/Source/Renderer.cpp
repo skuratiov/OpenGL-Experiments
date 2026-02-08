@@ -11,6 +11,7 @@
 #include "VertexBufferObject.h"
 #include "VertexBufferObjectIndirect.h"
 #include "TextPainter.h"
+#include "Scene.h"
 
 //
 //  Globals

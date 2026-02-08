@@ -146,6 +146,7 @@
     <ClInclude Include="Source\Image.h" />
     <ClInclude Include="Source\Renderer.h" />
     <ClInclude Include="Source\resource.h" />
+    <ClInclude Include="Source\Scene.h" />
     <ClInclude Include="Source\ShaderProgram.h" />
     <ClInclude Include="Source\TextPainter.h" />
     <ClInclude Include="Source\VertexBufferObject.h" />
@@ -157,6 +158,7 @@
     <ClCompile Include="Source\Demo.cpp" />
     <ClCompile Include="Source\Image.cpp" />
     <ClCompile Include="Source\Renderer.cpp" />
+    <ClCompile Include="Source\Scene.cpp" />
     <ClCompile Include="Source\ShaderProgram.cpp" />
     <ClCompile Include="Source\TextPainter.cpp" />
     <ClCompile Include="Source\VertexBufferObject.cpp" />

@@ -52,7 +52,6 @@ void Demo::Run(double frameTime, float fps) {
 	g_pRenderer->drawFrame(frameTime, fps);
 }
 
-
 // Done
 void Demo::Done() {
 	g_pRenderer->cleanup();

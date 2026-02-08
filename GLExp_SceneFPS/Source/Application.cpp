@@ -487,8 +487,8 @@ void Application::accumMouseDelta(LONG dx, LONG dy) {
     m_nMouseDY += dy;
 }
 
-void Application::consumeMouseDelta(LONG &dx, LONG &dy) {
-    dx = m_nMouseDX;
-    dy = m_nMouseDY;
-    m_nMouseDX = m_nMouseDY = 0;
+bool Application::consumeMouseDelta(float &dx, float &dy) {
+    dx = (float)m_nMouseDX;
+    dy = (float)m_nMouseDY;
+    return (dx != 0.f || dy != 0.f);
  }

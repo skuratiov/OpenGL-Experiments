@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Source\Application.h" />
+    <ClInclude Include="Source\Camera.h" />
     <ClInclude Include="Source\Demo.h" />
     <ClInclude Include="Source\framework.h" />
     <ClInclude Include="Source\Image.h" />
@@ -152,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Application.cpp" />
+    <ClCompile Include="Source\Camera.cpp" />
     <ClCompile Include="Source\Demo.cpp" />
     <ClCompile Include="Source\Image.cpp" />
     <ClCompile Include="Source\Renderer.cpp" />

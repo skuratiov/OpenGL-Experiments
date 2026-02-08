@@ -4,6 +4,7 @@
 //
 
 #include "framework.h"
+#include "Camera.h"
 #include "Renderer.h"
 #include "Image.h"
 #include "ShaderProgram.h"
@@ -40,18 +41,12 @@ void Renderer::setupView(long width, long height) {
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
 
     float aspectRatio = ((float)width / (float)height);
     m_projectionMatrix = glm::perspective(glm::radians(90.0f), aspectRatio, 0.1f, 1000.0f);
-
-    m_viewMatrix = glm::lookAt(
-        glm::vec3(0.0f, 0.0f, 5.0f), 
-        glm::vec3(0.0f, 0.0f, 0.0f), 
-        glm::vec3(0.0f, 1.0f, 0.0f)  
-    );
-
 }
 
 // Init scene
@@ -64,14 +59,16 @@ void Renderer::initScene() {
 // Draw frame
 void Renderer::drawFrame(double frameTime, float fps) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    Camera* pCamera = Camera::getInstance();
+	pCamera->getViewMatrixUpdated(m_viewMatrix);
        
     m_modelMatrix = glm::mat4(1.0f);
-    m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(1.0f));
-    m_modelMatrix = glm::translate(m_modelMatrix, glm::vec3(0.0f, 0.0f, 1.0f));
-    m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(1.0f, 0.0f, 0.0f));
-    m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(0.0f, 1.0f, 0.0f));
-    m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(m_rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
-    
+   
+    /*
+	*  Draw scene using MVP matrices and shaders here
+    */
+
        
     
     wchar_t fpsStr[32];

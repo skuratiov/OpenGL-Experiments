@@ -30,7 +30,7 @@ public:
 	virtual void onKeyUp(int) = 0;
 
 	void accumMouseDelta(LONG, LONG);
-	void consumeMouseDelta(LONG&, LONG&);
+	bool consumeMouseDelta(float&, float&);
 
 protected:
 	virtual BOOL Init(LPWSTR) = 0;

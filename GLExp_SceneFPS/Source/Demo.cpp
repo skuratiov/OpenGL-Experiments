@@ -4,7 +4,9 @@
 //
 
 #include "Demo.h"
+#include "Camera.h"
 #include "Renderer.h"
+
 
 //
 //  Globals
@@ -12,6 +14,7 @@
 Demo* Demo::m_pInstance = nullptr;
 
 Renderer* g_pRenderer = Renderer::getInstance();
+Camera* g_pCamera = Camera::getInstance();
 
 //
 // Constructor / destructor
@@ -35,7 +38,17 @@ BOOL Demo::Init(LPWSTR lpCmdLine) {
 
 // Run
 void Demo::Run(double frameTime, float fps) {
-	
+
+	//	Update camera
+	float mouseDX, mouseDY;
+	if (consumeMouseDelta(mouseDX, mouseDY)) {
+		g_pCamera->onMouseMove(mouseDX, mouseDY, (float)frameTime);
+	}
+	g_pCamera->updateOnControls((float)frameTime);
+
+
+
+	//	Render frame
 	g_pRenderer->drawFrame(frameTime, fps);
 }
 
@@ -46,9 +59,11 @@ void Demo::Done() {
 }
 
 void Demo::onKeyDown(int key) {
+	g_pCamera->onKeyDown(key);
 }
 
 void Demo::onKeyUp(int key) {
+	g_pCamera->onKeyUp(key);
 }
 
 //

@@ -21,6 +21,8 @@ public:
 
 	void setWindowTitle(LPCWSTR szTitle) const;
 
+	inline void swapBuffers() const { SwapBuffers(m_hDC); }
+
 	inline void activeRawInput(bool isActive) {
 		if (isActive) { initRawInput(); }
 		else { destroyRawInput(); }
@@ -53,7 +55,7 @@ private:
 	LARGE_INTEGER m_startTime, m_timerFrequency;
 
 	ATOM registerWindowClass(HINSTANCE );
-	void unregisterWindowClass();
+	void unregisterWindowClass() const;
 
 	BOOL initInstance(HINSTANCE , int );
 	void destroyInstance();
@@ -81,7 +83,9 @@ private:
 	BOOL initOpenGL(BYTE, BYTE, BYTE, BOOL isSync = FALSE);
 	void destroyOpenGL();
 
-	void centerCursor();
+	inline BOOL isOpenGLInitizlized() const { return (m_hDC && m_hGLRC); }
+
+	void centerCursor() const;
 	BOOL initRawInput();
 	void destroyRawInput();
 };

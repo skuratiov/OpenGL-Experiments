@@ -1,4 +1,4 @@
-//
+    //
 // OpenGL framework and demo boilerplate
 // (c) 2026 by Sergei Kuratiov. MIT License
 //

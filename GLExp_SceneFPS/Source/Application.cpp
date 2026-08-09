@@ -1,4 +1,4 @@
-//
+﻿//
 // OpenGL framework and demo boilerplate
 // (c) 2026 by Sergei Kuratiov. MIT License
 //
@@ -71,7 +71,7 @@ void Application::runApplicationBase() {
             
         if (m_hDC && m_hGLRC) {
             Run(frameTime, m_currentFPS);
-            SwapBuffers(m_hDC);
+            swapBuffers();
         }
 
         frameTime = getFrameTime();
@@ -128,7 +128,7 @@ ATOM Application::registerWindowClass(HINSTANCE hInstance) {
 }
 
 // Unregister WindowClass
-void Application::unregisterWindowClass() {
+void Application::unregisterWindowClass() const {
     UnregisterClass(szWindowClass, m_hInstance);
 }
 
@@ -144,17 +144,18 @@ BOOL Application::initInstance(HINSTANCE hInstance, int nCmdShow) {
         return FALSE;
     }
 
-    ShowWindow(m_hWnd, nCmdShow);
-    UpdateWindow(m_hWnd);
-
-    SetForegroundWindow(m_hWnd);
-    SetFocus(m_hWnd);
-
     if (nullptr == (m_hDC = GetDC(m_hWnd))) {
         DestroyWindow(m_hWnd);
         m_hWnd = nullptr;
         return FALSE;
     }
+
+    
+    ShowWindow(m_hWnd, nCmdShow);
+    UpdateWindow(m_hWnd);
+
+    SetForegroundWindow(m_hWnd);
+    SetFocus(m_hWnd);
 
     return TRUE;
 }
@@ -173,6 +174,31 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
     Application* pApp = (Application*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
     switch (message) {
+
+        case WM_PAINT: {
+            if (pApp && pApp->isOpenGLInitizlized()) {
+                ValidateRect(hWnd, NULL); 
+                return 0;
+            }
+
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hWnd, &ps);
+
+            RECT rect;
+            GetClientRect(hWnd, &rect);
+
+            HBRUSH blackBrush = CreateSolidBrush(RGB(0, 0, 0));
+            FillRect(hdc, &rect, blackBrush);
+            DeleteObject(blackBrush);
+
+            // Красный текст
+            SetTextColor(hdc, RGB(255, 0, 0));
+            SetBkMode(hdc, TRANSPARENT);
+            TextOutW(hdc, 10, 10, L"Initializing OpenGL...", 22);
+
+            EndPaint(hWnd, &ps);
+        }
+        break;
 
         case WM_NCCREATE: {
             auto* cs = (CREATESTRUCT*)lParam;
@@ -193,7 +219,7 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
         }
 
         case WM_INPUT: {
-            RAWINPUT input;
+            RAWINPUT input = {};
             UINT size = sizeof(RAWINPUT);
             if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &input, &size, sizeof(RAWINPUTHEADER)) == size) {
                 if (input.header.dwType == RIM_TYPEMOUSE) {
@@ -423,7 +449,7 @@ void Application::setWindowTitle(LPCWSTR szTitle) const {
     SetWindowTextW(m_hWnd, buffer);
 }
 
-void Application::centerCursor() {
+void Application::centerCursor() const {
     RECT rc;
     GetClientRect(m_hWnd, &rc);
 

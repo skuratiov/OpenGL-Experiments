@@ -5,6 +5,7 @@
 
 #include "framework.h"
 #include "Camera.h"
+#include "Demo.h"
 #include "Renderer.h"
 #include "Image.h"
 #include "ShaderProgram.h"
@@ -52,11 +53,21 @@ void Renderer::setupView(long width, long height) {
 
 // Init scene
 void Renderer::initScene() {
-    
+
+    Demo* pDemo = Demo::getInstance();
+
+    this->cleanup();
+    textPainter.initFont();
+
+
+    textPainter.beginTextLayer();
+	textPainter.textOut((wchar_t*) L"Loading scene...", 10, 10, 0.25, glm::vec3(1.0f, 0.0f, 0.0f));
+    textPainter.endTextLayer();
+	pDemo->swapBuffers();
+
+
     Scene* pScene = Scene::getInstance();
 	pScene->fromOBJ("../Scene/conference.obj");
-
-    textPainter.initFont();
 }
 
 // Draw frame
@@ -77,12 +88,17 @@ void Renderer::drawFrame(double frameTime, float fps) {
     wchar_t fpsStr[32];
     swprintf(fpsStr, 32, L"FPS: %.2f", fps);
     textPainter.beginTextLayer();
-    textPainter.textOut(fpsStr, 10, 10, 0.25, glm::vec3(1.0, 0.0f, 0.0f));
+    textPainter.textOut(fpsStr, 10, 10, 0.25, glm::vec3(1.0f, 0.0f, 0.0f));
     textPainter.endTextLayer();
 }
 
 //
 void Renderer::cleanup() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    Camera* pCamera = Camera::getInstance();
+    
+    m_viewMatrix = glm::mat4(1.0f);
+    m_modelMatrix = glm::mat4(1.0f);
 
     textPainter.cleanup();
 }

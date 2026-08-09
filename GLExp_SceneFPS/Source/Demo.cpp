@@ -28,7 +28,7 @@ Demo::~Demo() {
 //	Init 
 BOOL Demo::Init(LPWSTR lpCmdLine) {
 
-	setWindowTitle(L"Indirect rendering");
+	setWindowTitle(L"3D scene rendering");
 	
 	g_pRenderer->setupView(getViewportWidth(), getViewportHeight());
 	g_pRenderer->initScene();

@@ -65,16 +65,19 @@ BOOL Application::initApplicationBase(LPWSTR lpCmdLine, HINSTANCE hInstance, int
 void Application::runApplicationBase() {
     double frameTime = 0.0;
 
+    // Initialize timer so first measured frameTime is valid
+    startFrameTimer();
+
     while (handleMessages()) {
 
+        // Measure time elapsed since last frame and restart timer for next frame
+        frameTime = getFrameTime();
         startFrameTimer();
-            
+
         if (m_hDC && m_hGLRC) {
             Run(frameTime, m_currentFPS);
             swapBuffers();
         }
-
-        frameTime = getFrameTime();
 
         m_frameCounter++;
         m_timeAccumulator += frameTime;
@@ -119,7 +122,7 @@ ATOM Application::registerWindowClass(HINSTANCE hInstance) {
     wcex.hInstance = hInstance;
     wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.hbrBackground = (HBRUSH) CreateSolidBrush(RGB(0, 0, 0));
     wcex.lpszMenuName = NULL;
     wcex.lpszClassName = szWindowClass;
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_ICON1));
@@ -175,9 +178,22 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
 
     switch (message) {
 
+        case WM_NCCREATE: {
+            auto* cs = (CREATESTRUCT*)lParam;
+            pApp = (Application*)cs->lpCreateParams;
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pApp);
+            break;
+        }
+
+        case WM_ACTIVATE: {
+            if (!pApp) break;
+            pApp->activeRawInput(LOWORD(wParam) != WA_INACTIVE);
+            break;
+        }
+
         case WM_PAINT: {
             if (pApp && pApp->isOpenGLInitizlized()) {
-                ValidateRect(hWnd, NULL); 
+                ValidateRect(hWnd, NULL);
                 return 0;
             }
 
@@ -200,18 +216,8 @@ LRESULT CALLBACK  Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, L
         }
         break;
 
-        case WM_NCCREATE: {
-            auto* cs = (CREATESTRUCT*)lParam;
-            pApp = (Application*)cs->lpCreateParams;
-            SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pApp);
-            break;
-        }
-
-        case WM_ACTIVATE: {
-            if (!pApp) break;
-            pApp->activeRawInput(LOWORD(wParam) != WA_INACTIVE);
-            break;
-        }
+        case WM_ERASEBKGND:
+            return 1;
 
         case WM_SETCURSOR: {
             SetCursor(NULL);
@@ -489,6 +495,10 @@ BOOL Application::initRawInput() {
         if (ShowCursor(FALSE) < 0) break;
     }
 
+    // Clear any residual deltas created during initialization (prevent startup drift)
+    m_nMouseDX = 0;
+    m_nMouseDY = 0;
+
     return TRUE;
 }
 
@@ -514,7 +524,17 @@ void Application::accumMouseDelta(LONG dx, LONG dy) {
 }
 
 bool Application::consumeMouseDelta(float &dx, float &dy) {
-    dx = (float)m_nMouseDX;
-    dy = (float)m_nMouseDY;
+    dx = static_cast<float>(m_nMouseDX);
+    dy = static_cast<float>(m_nMouseDY);
+
+    // consume the accumulated deltas so they are not reused next frame
+    m_nMouseDX = 0;
+    m_nMouseDY = 0;
+
+    // Small noise threshold to ignore 1-pixel jitter from raw input
+    const float NOISE_THRESH = 0.5f;
+    if (fabsf(dx) < NOISE_THRESH) dx = 0.f;
+    if (fabsf(dy) < NOISE_THRESH) dy = 0.f;
+
     return (dx != 0.f || dy != 0.f);
  }

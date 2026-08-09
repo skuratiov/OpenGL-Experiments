@@ -32,6 +32,16 @@ public:
 
 	BOOL fromOBJ(const char*);
 
+	size_t getMeshCount() const { return m_nMeshCount; }
+
+	// Add this function to provide access to meshes by index
+	Mesh* getMesh(size_t index) const {
+		if (index < m_nMeshCount) {
+			return m_Meshes[index];
+		}
+		return nullptr;
+	}
+
 protected:
 	Scene();
 
@@ -42,6 +52,7 @@ private:
 	size_t m_nMeshCount = 0;
 
 	BOOL parseOBJ(uint8_t* buffer, size_t size);
+	BOOL parseOBJ2(uint8_t* buffer, size_t size);
 
 	void calculateNormals(glm::vec3* vertices, uint32_t* indices, size_t vertexCount,
 		size_t indexCount, glm::vec3* normals);
@@ -52,5 +63,10 @@ private:
 
 	void calculateBoundingBox(glm::vec3* vertices, size_t vertexCount,
 		glm::vec3& outMin, glm::vec3& outMax);
+
+	// Debug: write detailed mesh info to file before GPU upload
+	void debugDumpMesh(const char* materialName, glm::vec3* vertices, size_t vertexCount,
+		glm::vec2* uvs, glm::vec3* normals, glm::vec3* tangents,
+		uint32_t* indices, size_t indexCount);
 };
 

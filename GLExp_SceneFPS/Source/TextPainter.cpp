@@ -127,10 +127,10 @@ BOOL TextPainter::initFont() {
 		return -5;
 
 	GLfloat vertexData[] = {
-		0.0f,0.0f, // top-left
-		0.0f,1.0f, // bottom-left
-		1.0f,0.0f, // top-right
-		1.0f,1.0f  // bottom-right
+		0.0f, 0.0f, // 0: top-left
+		1.0f, 0.0f, // 1: top-right    
+		0.0f, 1.0f, // 2: bottom-left  
+		1.0f, 1.0f  // 3: bottom-right
 	};
 
 	m_textVertices.createBuffers(vertexData, sizeof(vertexData), nullptr, 0, VERTEX_DATA_FORMAT::FLOAT_VX2);
@@ -174,6 +174,10 @@ void TextPainter::beginTextLayer() {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureArray);
 
+	// Ensure text is drawn on top of the scene:
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
@@ -183,6 +187,10 @@ void TextPainter::endTextLayer() {
 	m_textShaderProgram.freeProgram();
 
 	glDisable(GL_BLEND);
+
+	// Restore depth testing / depth write so scene rendering continues normally
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);

@@ -18,8 +18,8 @@ Camera::Camera() {
 
 void Camera::onKeyDown(int key) {
     switch (key) {
-        case 'W': m_moveDir.z = -1.f; break;
-        case 'S': m_moveDir.z = 1.f; break;
+        case 'W': m_moveDir.z = +1.f; break;
+        case 'S': m_moveDir.z = -1.f; break;
         case 'A': m_moveDir.x = -1.f; break;
         case 'D': m_moveDir.x = 1.f; break;
         case VK_SPACE: m_moveDir.y = 1.f; break;
@@ -45,8 +45,8 @@ void Camera::onMouseMove(float dx, float dy, float frameTime) {
     m_mouseDX = glm::mix(m_mouseDX, dx, alpha);
     m_mouseDY = glm::mix(m_mouseDY, dy, alpha);
 
-    m_yaw += m_mouseDX * m_sensitivity;
-    m_pitch += m_mouseDY * m_sensitivity;
+    m_yaw += m_mouseDX * MOUSE_SENSITIVITY;
+    m_pitch += m_mouseDY * MOUSE_SENSITIVITY;
 
     m_pitch = glm::clamp(m_pitch, -89.f, 89.f);
 
@@ -64,7 +64,15 @@ void Camera::addRoll(float dr) {
 }
 
 void Camera::updateOnControls(float frameTime) {
-    glm::vec3 targetVelocity = m_moveDir * m_speed;
+    // Normalize horizontal movement so diagonal movement doesn't become faster
+    glm::vec3 moveDir = m_moveDir;
+    float horizLen = glm::length(glm::vec2(moveDir.x, moveDir.z));
+    if (horizLen > 1.0f) {
+        moveDir.x /= horizLen;
+        moveDir.z /= horizLen;
+    }
+
+    glm::vec3 targetVelocity = moveDir * m_speed;
 
     float alpha = 1.f - expf(-m_smoothFactorMove * frameTime);
     m_velocity = glm::mix(m_velocity, targetVelocity, alpha);
@@ -126,4 +134,23 @@ void Camera::getViewMatrixUpdated(glm::mat4& view) const {
     view[3][1] = -glm::dot(m_up, m_position);
     view[3][2] = glm::dot(m_front, m_position);
     view[3][3] = 1.f;
+}
+
+void Camera::resetState() {
+    // Restore defaults used in header
+    m_yaw = -90.f;
+    m_pitch = 0.f;
+    m_roll = 0.f;
+
+    // Clear mouse smoothing accumulators and movement
+    m_mouseDX = 0.f;
+    m_mouseDY = 0.f;
+
+    m_moveDir = glm::vec3(0.f);
+    m_velocity = glm::vec3(0.f);
+
+    // Optionally reset position if you want (commented out):
+    // m_position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    updateVectors();
 }

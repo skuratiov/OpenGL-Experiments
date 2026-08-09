@@ -1,4 +1,4 @@
-#include "framework.h"
+﻿#include "framework.h"
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -83,8 +83,163 @@ BOOL Scene::fromOBJ(const char * lpFileName) {
 
 	return result;
 }
-
 int Scene::parseOBJ(uint8_t* buffer, size_t size) {
+    std::istringstream iss(std::string(reinterpret_cast<char*>(buffer), size));
+    std::string line;
+
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> uvs;
+
+    struct TempMesh {
+        std::string materialName;
+        std::vector<glm::vec3> vertices;
+        std::vector<glm::vec3> normals;
+        std::vector<glm::vec2> uvs;
+        std::vector<uint32_t> indices;
+        std::unordered_map<VertexKey, uint32_t, VertexKeyHash> vertexMap;
+    };
+
+    std::vector<TempMesh> parsedMeshes;
+    std::string currentMaterial = "default";
+    bool hasActiveGeometry = false;
+
+    auto startNewMesh = [&](const std::string& matName) {
+        TempMesh newMesh;
+        newMesh.materialName = matName;
+        parsedMeshes.push_back(newMesh);
+        hasActiveGeometry = false;
+        };
+
+    startNewMesh(currentMaterial);
+
+    auto addVertexToMesh = [&](TempMesh& mesh, int vi, int ti, int ni) -> uint32_t {
+        if (vi > 0) vi--; else if (vi < 0) vi = (int)positions.size() + vi;
+        if (ti > 0) ti--; else if (ti < 0) ti = (int)uvs.size() + ti;
+        if (ni > 0) ni--; else if (ni < 0) ni = (int)normals.size() + ni;
+
+        VertexKey key{ vi, ti, ni };
+        auto it = mesh.vertexMap.find(key);
+        if (it != mesh.vertexMap.end()) return it->second;
+
+        uint32_t newIdx = (uint32_t)mesh.vertices.size();
+        mesh.vertices.push_back((vi >= 0 && vi < (int)positions.size()) ? positions[vi] : glm::vec3(0.0f));
+        mesh.normals.push_back((ni >= 0 && ni < (int)normals.size()) ? normals[ni] : glm::vec3(0.0f));
+        mesh.uvs.push_back((ti >= 0 && ti < (int)uvs.size()) ? uvs[ti] : glm::vec2(0.0f));
+
+        mesh.vertexMap[key] = newIdx;
+        return newIdx;
+        };
+
+    while (std::getline(iss, line)) {
+        std::istringstream ls(line);
+        std::string prefix;
+        ls >> prefix;
+        if (prefix.empty() || prefix[0] == '#') continue;
+
+        if (prefix == "v") {
+            glm::vec3 v; ls >> v.x >> v.y >> v.z;
+            positions.push_back(v);
+        }
+        else if (prefix == "vn") {
+            glm::vec3 n; ls >> n.x >> n.y >> n.z;
+            normals.push_back(n);
+        }
+        else if (prefix == "vt") {
+            glm::vec2 uv; ls >> uv.x >> uv.y;
+            uvs.push_back(uv);
+        }
+        else if (prefix == "o" || prefix == "g") {
+
+            if (hasActiveGeometry) {
+                startNewMesh(currentMaterial);
+            }
+        }
+        else if (prefix == "usemtl") {
+            ls >> currentMaterial;
+            
+            if (hasActiveGeometry && parsedMeshes.back().materialName != currentMaterial) {
+                startNewMesh(currentMaterial);
+            }
+            else {
+                parsedMeshes.back().materialName = currentMaterial;
+            }
+        }
+        else if (prefix == "f") {
+            hasActiveGeometry = true;
+            struct OBJVertex { int vi = 0, ti = 0, ni = 0; };
+            std::vector<OBJVertex> faceVertices;
+            std::string vertexStr;
+
+            while (ls >> vertexStr) {
+                OBJVertex v;
+                std::replace(vertexStr.begin(), vertexStr.end(), '/', ' ');
+                std::istringstream vStream(vertexStr);
+
+                if (vertexStr.find("  ") != std::string::npos) {
+                    vStream >> v.vi >> v.ni;
+                }
+                else {
+                    vStream >> v.vi;
+                    if (vStream >> v.ti) vStream >> v.ni;
+                }
+                faceVertices.push_back(v);
+            }
+
+            if (faceVertices.size() >= 3) {
+                TempMesh& currentMesh = parsedMeshes.back();
+                for (size_t i = 1; i < faceVertices.size() - 1; ++i) {
+                    currentMesh.indices.push_back(addVertexToMesh(currentMesh, faceVertices[0].vi, faceVertices[0].ti, faceVertices[0].ni));
+                    currentMesh.indices.push_back(addVertexToMesh(currentMesh, faceVertices[i + 1].vi, faceVertices[i + 1].ti, faceVertices[i + 1].ni));
+                    currentMesh.indices.push_back(addVertexToMesh(currentMesh, faceVertices[i].vi, faceVertices[i].ti, faceVertices[i].ni));
+                }
+            }
+        }
+    }
+
+    bool fileHasNormals = !normals.empty();
+    struct GLVertex { glm::vec3 pos; glm::vec2 uv; glm::vec3 normal; glm::vec3 tangent; };
+
+    for (auto& data : parsedMeshes) {
+        if (data.indices.empty()) continue;
+
+        if (!fileHasNormals) {
+            data.normals.resize(data.vertices.size(), glm::vec3(0.0f));
+            calculateNormals(data.vertices.data(), data.indices.data(), data.vertices.size(), data.indices.size(), data.normals.data());
+        }
+
+        std::vector<glm::vec3> tangents(data.vertices.size(), glm::vec3(0.0f));
+        calculateTangents(data.vertices.data(), data.uvs.data(), data.normals.data(), data.indices.data(), data.vertices.size(), data.indices.size(), tangents.data());
+
+        debugDumpMesh(data.materialName.c_str(), data.vertices.data(), data.vertices.size(), data.uvs.data(), data.normals.data(), tangents.data(), data.indices.data(), data.indices.size());
+
+        std::vector<GLVertex> glBuffer(data.vertices.size());
+        for (size_t i = 0; i < data.vertices.size(); ++i) {
+            glBuffer[i].pos = data.vertices[i];
+            glBuffer[i].uv = data.uvs[i];
+            glBuffer[i].normal = data.normals[i];
+            glBuffer[i].tangent = tangents[i];
+        }
+
+        VertexBufferObjectIndirect* vbo = new VertexBufferObjectIndirect();
+        vbo->createIndirect(glBuffer.data(), (GLsizei)(glBuffer.size() * sizeof(GLVertex)),
+            data.indices.data(), (GLsizei)(data.indices.size() * sizeof(uint32_t)),
+            VERTEX_DATA_FORMAT::FLOAT_VX3UV2NR3TN3);
+
+        Mesh* mesh = new Mesh();
+        mesh->vbo = vbo;
+        mesh->material = new Material();
+        strncpy_s(mesh->material->name, sizeof(mesh->material->name), data.materialName.c_str(), _TRUNCATE);
+
+        m_Meshes[m_nMeshCount++] = mesh;
+        calculateBoundingBox(data.vertices.data(), data.vertices.size(), mesh->bboxMin, mesh->bboxMax);
+    }
+
+    return TRUE;
+}
+
+
+int Scene::parseOBJ2(uint8_t* buffer, size_t size) {
     std::istringstream iss(std::string(reinterpret_cast<char*>(buffer), size));
     std::string line;
 
@@ -138,24 +293,43 @@ int Scene::parseOBJ(uint8_t* buffer, size_t size) {
 
         if (!finalVertices) {
             finalCap = 8;
-            finalVertices = new glm::vec3[finalCap];
-            finalNormals = new glm::vec3[finalCap];
-            finalUVs = new glm::vec2[finalCap];
+            finalVertices = new glm::vec3[finalCap]();      // value-initialize to zero
+            finalNormals = new glm::vec3[finalCap]();       // value-initialize to zero
+            finalUVs = new glm::vec2[finalCap]();           // value-initialize to zero
         }
         if (finalCount >= finalCap) {
             finalCap *= 2;
-            glm::vec3* tmpV = new glm::vec3[finalCap]; memcpy(tmpV, finalVertices, finalCount * sizeof(glm::vec3)); delete[] finalVertices; finalVertices = tmpV;
-            glm::vec3* tmpN = new glm::vec3[finalCap]; memcpy(tmpN, finalNormals, finalCount * sizeof(glm::vec3)); delete[] finalNormals; finalNormals = tmpN;
-            glm::vec2* tmpUV = new glm::vec2[finalCap]; memcpy(tmpUV, finalUVs, finalCount * sizeof(glm::vec2)); delete[] finalUVs; finalUVs = tmpUV;
+            
+            // Safe resize with explicit copy and cleanup
+            glm::vec3* tmpV = new glm::vec3[finalCap]();
+            if (finalVertices) {
+                std::memcpy(tmpV, finalVertices, finalCount * sizeof(glm::vec3));
+                delete[] finalVertices;
+            }
+            finalVertices = tmpV;
+            
+            glm::vec3* tmpN = new glm::vec3[finalCap]();
+            if (finalNormals) {
+                std::memcpy(tmpN, finalNormals, finalCount * sizeof(glm::vec3));
+                delete[] finalNormals;
+            }
+            finalNormals = tmpN;
+            
+            glm::vec2* tmpUV = new glm::vec2[finalCap]();
+            if (finalUVs) {
+                std::memcpy(tmpUV, finalUVs, finalCount * sizeof(glm::vec2));
+                delete[] finalUVs;
+            }
+            finalUVs = tmpUV;
         }
 
-        finalVertices[finalCount] = (vi >= 0 && vi < positions.size()) ? positions[vi] : glm::vec3(0.0f);
-        finalNormals[finalCount] = (ni >= 0 && ni < normals.size()) ? normals[ni] : glm::vec3(0.0f);
-        finalUVs[finalCount] = (ti >= 0 && ti < uvs.size()) ? uvs[ti] : glm::vec2(0.0f);
+        finalVertices[finalCount] = (vi >= 0 && vi < (int)positions.size()) ? positions[vi] : glm::vec3(0.0f);
+        finalNormals[finalCount] = (ni >= 0 && ni < (int)normals.size()) ? normals[ni] : glm::vec3(0.0f);
+        finalUVs[finalCount] = (ti >= 0 && ti < (int)uvs.size()) ? uvs[ti] : glm::vec2(0.0f);
 
-        vertexMap[key] = finalCount;
+        vertexMap[key] = (uint32_t)finalCount;
 
-        return finalCount++;
+        return (uint32_t)(finalCount++);
     };
 
     auto createMesh = [&]() -> Mesh* {
@@ -164,10 +338,14 @@ int Scene::parseOBJ(uint8_t* buffer, size_t size) {
         if (!objHasNormals)
             calculateNormals(finalVertices, indices, finalCount, indexCount, finalNormals);
 
-        glm::vec3* tangents = new glm::vec3[finalCount];
+        glm::vec3* tangents = new glm::vec3[finalCount]();  // Initialize to zero with ()
         calculateTangents(finalVertices, finalUVs, finalNormals, indices, finalCount, indexCount, tangents);
 
+        // Debug dump before GPU upload
+        debugDumpMesh(currentMaterial->name, finalVertices, finalCount, finalUVs, finalNormals, tangents, indices, indexCount);
+        
         VertexBufferObjectIndirect* vbo = new VertexBufferObjectIndirect();
+
         vbo->createIndirect(finalVertices, (GLsizei)(finalCount * sizeof(glm::vec3)),
             indices, (GLsizei)(indexCount * sizeof(uint32_t)),
             VERTEX_DATA_FORMAT::FLOAT_VX3UV2NR3TN3);
@@ -200,71 +378,109 @@ int Scene::parseOBJ(uint8_t* buffer, size_t size) {
     bool parsingFaces = false;
 
     while (std::getline(iss, line)) {
-        std::istringstream ls(line);
-        std::string prefix;
-        ls >> prefix;
-        if (prefix.empty() || prefix[0] == '#') continue;
+         std::istringstream ls(line);
+         std::string prefix;
+         ls >> prefix;
+         
+         // Skip empty lines and pure comments
+         if (prefix.empty() || (prefix[0] == '#' && prefix.length() == 1)) {
+             continue;
+         }
+         
+         // Statistics line (e.g., "#411 polygons") signals EOF for this mesh group
+         if (prefix[0] == '#' && prefix.length() > 1 && std::isdigit(prefix[1])) {
+             if (parsingFaces) {
+                 createMesh();
+                 parsingFaces = false;
+             }
+             continue;
+         }
 
-        if (prefix == "o" || prefix == "g") {
-            if (parsingFaces) createMesh();
-            parsingFaces = true;
-            currentMaterial = defaultMaterial;
-        }
-        else if (prefix == "usemtl") {
-            std::string matName; ls >> matName;
-            currentMaterial = findOrCreateMaterial(matName);
-        }
-        else if (prefix == "f") {
-            parsingFaces = true;
-            std::vector<std::tuple<int, int, int>> polygonVerts;
+         // New group/object: finalize current mesh if one was being parsed
+         if (prefix == "o" || prefix == "g") {
+             if (parsingFaces) {
+                 createMesh();
+                 parsingFaces = false;
+             }
+             // Start collecting faces for this new group (material will be set by usemtl or default)
+             parsingFaces = false; // will become true when first 'f' is encountered
+             continue;
+         }
+         
+         // Material change: finalize current mesh, switch material, prepare for new faces
+         if (prefix == "usemtl") {
+             if (parsingFaces) {
+                 createMesh();
+                 parsingFaces = false;
+             }
+             std::string matName;
+             ls >> matName;
+             currentMaterial = findOrCreateMaterial(matName);
+             continue;
+         }
+         
+         // Parse face: accumulate vertices/triangles into current mesh
+         if (prefix == "f") {
+             parsingFaces = true;
 
-            std::string vert;
-            while (ls >> vert) {
-                int vi = -1, ti = -1, ni = -1;
-                size_t first = vert.find('/'), second = vert.rfind('/');
+             struct OBJVertex { int vi = 0, ti = 0, ni = 0; };
+             std::vector<OBJVertex> faceVertices;
+             std::string vertexStr;
 
-                vi = std::stoi(vert.substr(0, first)) - 1;
-                if (first != std::string::npos && second > first) {
-                    std::string mid = vert.substr(first + 1, second - first - 1);
-                    if (!mid.empty()) ti = std::stoi(mid) - 1;
-                    ni = std::stoi(vert.substr(second + 1)) - 1;
-                }
+             while (ls >> vertexStr) {
+                 OBJVertex v;
+                 std::replace(vertexStr.begin(), vertexStr.end(), '/', ' ');
+                 std::istringstream vStream(vertexStr);
 
-                polygonVerts.push_back(std::make_tuple(vi, ti, ni));
-            }
+                 if (vertexStr.find("  ") != std::string::npos) {
+                     vStream >> v.vi >> v.ni;
+                 }
+                 else {
+                      vStream >> v.vi;
+                     if (vStream >> v.ti) {
+                         vStream >> v.ni;
+                     }
+                 }
 
-            for (size_t j = 1; j + 1 < polygonVerts.size(); ++j) {
-                int vi0 = std::get<0>(polygonVerts[0]);
-                int ti0 = std::get<1>(polygonVerts[0]);
-                int ni0 = std::get<2>(polygonVerts[0]);
-                int vi1 = std::get<0>(polygonVerts[j]);
-                int ti1 = std::get<1>(polygonVerts[j]);
-                int ni1 = std::get<2>(polygonVerts[j]);
-                int vi2 = std::get<0>(polygonVerts[j + 1]);
-                int ti2 = std::get<1>(polygonVerts[j + 1]);
-                int ni2 = std::get<2>(polygonVerts[j + 1]);
+                 if (v.vi > 0) v.vi--; else if (v.vi < 0) v.vi = (int)positions.size() + v.vi;
+                 if (v.ti > 0) v.ti--; else if (v.ti < 0) v.ti = (int)uvs.size() + v.ti;
+                 if (v.ni > 0) v.ni--; else if (v.ni < 0) v.ni = (int)normals.size() + v.ni;
 
-                uint32_t idx0 = addVertex(vi0, ti0, ni0);
-                uint32_t idx1 = addVertex(vi1, ti1, ni1);
-                uint32_t idx2 = addVertex(vi2, ti2, ni2);
+                 faceVertices.push_back(v);
+             }
 
-                if (indexCount + 3 > indexCap) {
-                    indexCap = std::max(indexCap ? indexCap * 2 : 8, indexCount + 3);
-                    uint32_t* tmp = new uint32_t[indexCap];
-                    if (indices) { memcpy(tmp, indices, indexCount * sizeof(uint32_t)); delete[] indices; }
-                    indices = tmp;
-                }
+             if (faceVertices.size() >= 3) {
+                 for (size_t i = 1; i < faceVertices.size() - 1; ++i) {
 
-                indices[indexCount++] = idx0;
-                indices[indexCount++] = idx1;
-                indices[indexCount++] = idx2;
-            }
-        }
-    }
+                     if (!indices) {
+                         indexCap = 16;
+                         indices = new uint32_t[indexCap]();
+                     }
+                     if (indexCount + 3 > indexCap) {
+                         indexCap *= 2;
+                         uint32_t* tmpIdx = new uint32_t[indexCap]();
+                         if (indices) {
+                             std::memcpy(tmpIdx, indices, indexCount * sizeof(uint32_t));
+                             delete[] indices;
+                         }
+                         indices = tmpIdx;
+                     }
 
-    if (parsingFaces) createMesh();
-
-    return TRUE;
+                     indices[indexCount++] = addVertex(faceVertices[0].vi, faceVertices[0].ti, faceVertices[0].ni);
+                     indices[indexCount++] = addVertex(faceVertices[i].vi, faceVertices[i].ti, faceVertices[i].ni);
+                     indices[indexCount++] = addVertex(faceVertices[i + 1].vi, faceVertices[i + 1].ti, faceVertices[i + 1].ni);
+                 }
+             }
+             continue;
+         }
+     }
+     
+     // EOF: finalize any remaining mesh
+     if (parsingFaces) {
+         createMesh();
+     }
+     
+     return TRUE;
 }
 
 void Scene::calculateNormals(glm::vec3* vertices, uint32_t* indices,
@@ -354,4 +570,53 @@ void Scene::calculateBoundingBox(glm::vec3* vertices, size_t vertexCount,
         outMin = glm::min(outMin, vertices[i]);
         outMax = glm::max(outMax, vertices[i]);
     }
+}
+
+void Scene::debugDumpMesh(const char* materialName, glm::vec3* vertices, size_t vertexCount,
+                          glm::vec2* uvs, glm::vec3* normals, glm::vec3* tangents,
+                          uint32_t* indices, size_t indexCount) {
+    std::ofstream debugFile("mesh_debug.txt", std::ios::app);
+    if (!debugFile.is_open()) return;
+
+    debugFile << "=== MESH DEBUG: Material='" << materialName << "' ===\n";
+    debugFile << "Vertex Count: " << vertexCount << ", Index Count: " << indexCount 
+              << ", Triangle Count: " << (indexCount / 3) << "\n\n";
+
+    // ALL vertices
+    debugFile << "--- ALL " << vertexCount << " Vertices ---\n";
+    for (size_t i = 0; i < vertexCount; ++i) {
+        debugFile << "[" << i << "] Pos:(" 
+                  << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ") "
+                  << "UV:(" << uvs[i].x << ", " << uvs[i].y << ") "
+                  << "Normal:(" << normals[i].x << ", " << normals[i].y << ", " << normals[i].z << ") "
+                  << "Tangent:(" << tangents[i].x << ", " << tangents[i].y << ", " << tangents[i].z << ")\n";
+    }
+
+    // ALL triangles
+    debugFile << "\n--- ALL " << (indexCount / 3) << " Triangles ---\n";
+    for (size_t tri = 0; tri < indexCount / 3; ++tri) {
+        uint32_t idx0 = indices[tri * 3 + 0];
+        uint32_t idx1 = indices[tri * 3 + 1];
+        uint32_t idx2 = indices[tri * 3 + 2];
+        debugFile << "Triangle[" << tri << "]: idx(" << idx0 << ", " << idx1 << ", " << idx2 << ")\n";
+
+        if (idx0 < vertexCount && idx1 < vertexCount && idx2 < vertexCount) {
+            debugFile << "  V0: (" << vertices[idx0].x << ", " << vertices[idx0].y << ", " << vertices[idx0].z << ")\n";
+            debugFile << "  V1: (" << vertices[idx1].x << ", " << vertices[idx1].y << ", " << vertices[idx1].z << ")\n";
+            debugFile << "  V2: (" << vertices[idx2].x << ", " << vertices[idx2].y << ", " << vertices[idx2].z << ")\n";
+        }
+    }
+
+    // Bounding box
+    glm::vec3 meshMin = vertices[0];
+    glm::vec3 meshMax = vertices[0];
+    for (size_t i = 1; i < vertexCount; ++i) {
+        meshMin = glm::min(meshMin, vertices[i]);
+        meshMax = glm::max(meshMax, vertices[i]);
+    }
+    debugFile << "\nBBox Min: (" << meshMin.x << ", " << meshMin.y << ", " << meshMin.z << ")\n";
+    debugFile << "BBox Max: (" << meshMax.x << ", " << meshMax.y << ", " << meshMax.z << ")\n";
+    debugFile << "=== END MESH DEBUG ===\n\n";
+
+    debugFile.close();
 }

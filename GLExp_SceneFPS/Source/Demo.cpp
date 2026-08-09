@@ -40,10 +40,11 @@ BOOL Demo::Init(LPWSTR lpCmdLine) {
 void Demo::Run(double frameTime, float fps) {
 
 	//	Update camera
-	float mouseDX, mouseDY;
-	if (consumeMouseDelta(mouseDX, mouseDY)) {
-		g_pCamera->onMouseMove(mouseDX, mouseDY, (float)frameTime);
-	}
+	float mouseDX = 0.0f, mouseDY = 0.0f;
+	// always consume accumulated deltas (will zero accumulators inside)
+	consumeMouseDelta(mouseDX, mouseDY);
+	// always call onMouseMove so smoothing decays toward zero when idle
+	g_pCamera->onMouseMove(mouseDX, mouseDY, (float)frameTime);
 	g_pCamera->updateOnControls((float)frameTime);
 
 

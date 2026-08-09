@@ -13,24 +13,20 @@ uniform vec3 lightPos;
 out vec4 FragColor;
 
 void main() {
-    const vec3 lightPos = vec3(0.0, 0.0, 4.0);   
-    const vec3 viewPos  = vec3(0.0, 0.0, 4.0);   
-    const float shininess = 32.0;
-
-    vec3 N = texture(normalMap, vUV).rgb;
-    N = normalize(N * 2.0 - 1.0);         // [0,1] -> [-1,1]
-    N = normalize(vTBN * N);              // tangent -> world space
-
-    vec3 L = normalize(lightPos - vFragPos);
-    float diff = max(dot(N, L), 0.0);
-
-    vec3 V = normalize(viewPos - vFragPos);
-    vec3 H = normalize(L + V);
-    float spec = pow(max(dot(N,H), 0.0), shininess);
-
-    vec3 color = texture(diffuseMap, vUV).rgb;
-    vec3 finalColor = color * diff + vec3(1.0) * spec;
-
-    FragColor = vec4(finalColor, 1.0);
+    // Simple debug coloring: use UV coordinates as color
+    vec3 color = vec3(vUV.x, vUV.y, 0.5);
+    
+    // Alternative: use position as color
+    // vec3 color = normalize(abs(vFragPos)) * 0.5 + 0.5;
+    
+    // Alternative: use normal as color
+    // vec3 N = texture(normalMap, vUV).rgb;
+    // N = normalize(N * 2.0 - 1.0);
+    // N = normalize(vTBN * N);
+    // vec3 color = N * 0.5 + 0.5;
+    
+    // Alternative: use diffuse texture only (no lighting)
+    // vec3 color = texture(diffuseMap, vUV).rgb;
+    
+    FragColor = vec4(color, 1.0);
 }
-

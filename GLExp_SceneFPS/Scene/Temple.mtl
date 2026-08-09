@@ -1,0 +1,58 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 28.04.2013 16:42:05
+
+newmtl Wall
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka D:\DEVELOPMENT\WORKSPACE\glNativeTut05\assets\img\Masonry_Stone_Limestone_Rustic_bump.tga
+	map_Kd D:\DEVELOPMENT\WORKSPACE\glNativeTut05\assets\img\Masonry_Stone_Limestone_Rustic_bump.tga
+
+newmtl Floor
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka D:\DEVELOPMENT\WORKSPACE\glNativeTut05\assets\img\Masonry_Stone_Unfinished_bump.tga
+	map_Kd D:\DEVELOPMENT\WORKSPACE\glNativeTut05\assets\img\Masonry_Stone_Unfinished_bump.tga
+
+newmtl Chrome
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka D:\DEVELOPMENT\WORKSPACE\glNativeTut05\assets\img\TinFoil.tga
+	map_Kd D:\DEVELOPMENT\WORKSPACE\glNativeTut05\assets\img\TinFoil.tga
+
+newmtl Water
+	Ns 10.0000
+	Ni 1.5000
+	d 0.6600
+	Tr 0.3400
+	Tf 0.6600 0.6600 0.6600 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka D:\DEVELOPMENT\WORKSPACE\glNativeTut05\assets\img\ABALONE.tga
+	map_Kd D:\DEVELOPMENT\WORKSPACE\glNativeTut05\assets\img\ABALONE.tga
